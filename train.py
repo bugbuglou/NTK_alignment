@@ -178,12 +178,12 @@ for k, v in sorted(args.__dict__.items(), key=lambda a: a[0]):
         and v is not False):
         name += '%s=%s,' % (k, str(v))
 name = name[:-1]
-results_dir = os.path.join('results', name)
+results_dir = os.path.join('content/NTK_alignment/results', name)
 
-try:
-    os.mkdir(results_dir)
-except:
-    print('I will be overwriting a previous experiment')
+# try:
+#     os.mkdir(results_dir)
+# except:
+#     print('I will be overwriting a previous experiment')
 
 columns = ['iteration', 'time', 'epoch',
            'train_loss', 'train_acc',
