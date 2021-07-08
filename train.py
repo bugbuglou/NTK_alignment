@@ -111,10 +111,19 @@ def train(args, log, rae):
                     to_log['layer_align_train'] = \
                         layer_alignment(model, output_fn, dataloaders['micro_train'], 10,
                                         centering=not args.no_centering)
+                    _, to_log['layer_align_train_means'],  to_log['layer_align_train_means_2'], _, to_log['layer_align_train_covs'], to_log['layer_align_train_ratio'], to_log['layer_align_train_ratio1'], to_log['layer_align_train_ratio2'] = \
+                    layer_alignment_matrix(model, output_fn, dataloaders['micro_train'], 10,
+                                    centering=not args.no_centering)
+
+              
                 if args.layer_align_test:
                     to_log['layer_align_test'] = \
                         layer_alignment(model, output_fn, dataloaders['micro_test'], 10,
                                         centering=not args.no_centering)
+                    _, to_log['layer_align_test_means'],  to_log['layer_align_test_means_2'], _, to_log['layer_align_test_covs'], to_log['layer_align_test_ratio'],to_log['layer_align_test_ratio1'], to_log['layer_align_test_ratio2'] = \
+                    layer_alignment_matrix(model, output_fn, dataloaders['micro_test'], 10,
+                                    centering=not args.no_centering)
+                    
                 if args.align_train or args.save_ntk_train:
                     to_log['align_train'], ntk = alignment(model, output_fn, dataloaders['micro_train'],
                                                            10, centering=not args.no_centering)
@@ -190,8 +199,20 @@ columns = ['iteration', 'time', 'epoch',
            'test_loss', 'test_acc']
 if args.layer_align_train:
     columns.append('layer_align_train')
+    columns.append('layer_align_train_means')
+    columns.append('layer_align_train_covs')
+    columns.append('layer_align_train_ratio')
+    columns.append('layer_align_train_ratio1')
+    columns.append('layer_align_train_ratio2')
+    columns.append('layer_align_train_means_2')
 if args.layer_align_test:
     columns.append('layer_align_test')
+    columns.append('layer_align_test_means')
+    columns.append('layer_align_test_covs')
+    columns.append('layer_align_test_ratio')
+    columns.append('layer_align_test_ratio1')
+    columns.append('layer_align_test_ratio2')
+    columns.append('layer_align_test_means_2')
 if args.align_train or args.save_ntk_train:
     columns.append('align_train')
 if args.align_test or args.save_ntk_test:
@@ -201,6 +222,7 @@ if args.align_easy_diff:
     columns.append('align_diff_train')
 if args.complexity:
     columns += ['trK', 'norm_dw']
+    
 
 log = pd.DataFrame(columns=columns)
 train(args, log, rae)
