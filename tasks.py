@@ -180,25 +180,27 @@ def add_difficult_examples(dataloaders, args):
 def get_task(args):
     dataloaders = dict()
 
-    task_name, model_name = args.task.split('_')
+    task_name, model_name = args['task'].split('_')
 
     if task_name == 'cifar10':
-        if args.depth != 0:
+        if args['depth'] != 0:
             raise NotImplementedError
         dataloaders['train'], dataloaders['test'] = get_cifar10(args)
         if model_name == 'vgg19':
-            model = VGG('VGG19', base=args.width)
+            model = VGG('VGG19', base=args['width'])
         elif model_name == 'resnet18':
             model = ResNet18()
-            if args.width != 0:
+            if args['width'] != 0:
                 raise NotImplementedError
     elif task_name == 'mnist':
         dataloaders['train'], dataloaders['test'] = get_mnist(args)
         if model_name == 'fc':
-            layers = [nn.Flatten(), nn.Linear(28 * 28, args.width), nn.ReLU()] + \
-                     [nn.Linear(args.width, args.width), nn.ReLU()] * (args.depth - 2) + \
-                     [nn.Linear(args.width, 10)]
+            layers = [nn.Flatten(), nn.Linear(28 * 28, args['width']), nn.ReLU()] + \
+                     [nn.Linear(args['width'], args['width']), nn.ReLU()] * (args['depth'] - 2) + \
+                     [nn.Linear(args['width'], 10)]
             model = nn.Sequential(*layers)
+        elif model_name == 'fcfree':
+            model = FC(depth = args['depth'], width = args['width'])
         else:
             raise NotImplementedError
 
