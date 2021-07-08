@@ -11,6 +11,35 @@ cfg = {
 }
 
 
+class FC(nn.Module):
+    def __init__(self, depth, width, bn=False, base=0):
+        super(FC, self).__init__()
+        self.bn = bn 
+        base = base if base != 0 else 64
+        self.base = base
+        self.features = self._make_layers(depth, width)
+        # self.classifier = nn.Linear(8 * base, 10)
+
+    def forward(self, x):
+        out = self.features(x)
+        # out = out.view(out.size(0), -1)
+        # out = self.classifier(out)
+        return out
+
+    def _make_layers(self, depth, width):
+        layers = []
+        # in_channels = 3
+        for i in range(depth):
+            if i==0:
+                layers += [nn.Flatten(), nn.Linear(28 * 28, width), nn.ReLU()]
+            elif i<depth-1:
+                layers += [nn.Linear(width, width), nn.ReLU()]
+            else:
+                layers += [nn.Linear(width, 10)]
+        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
+
+
 class VGG(nn.Module):
     def __init__(self, vgg_name, bn=False, base=0):
         super(VGG, self).__init__()
