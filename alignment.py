@@ -14,7 +14,7 @@ def frobenius(matrix):
 
 def mean_distance(mean):
     m = torch.stack(mean,dim = 0).reshape([10,-1])
-    if args['no_centering'] == False:
+    if args.no_centering == False:
         M = m.mean(dim = 0)
         m = m - M
     # print(m.shape)
@@ -107,23 +107,33 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
 
 def layer_alignment_matrix(model, output_fn, loader, n_output, centering=True):
     lc = LayerCollection.from_model(model)
+
     targets = torch.cat([args[1] for args in iter(loader)])
-    means, mean_dists, cov_frobs, covs, ratios = [], [], [], [], []
+
+    means, mean_dists, mean_dists_2 ,cov_frobs, covs, ratios, ratios1, ratios2 = [], [], [], [], [], [], [], []
     for l in lc.layers.items():
         # print(l)
         lc_this = LayerCollection()
         lc_this.add_layer(*l)
-
-        # generator = Jacobian(layer_collection=lc_this,
-        #                      model=model,
-        #                      loader=loader,
-        #                      function=output_fn,
-        #                      n_output=n_output,
-        #                      centering=centering)
-
-        # K = generator.get_jacobian()
         
-        mean, cov_frob = [], []
+        mean1, mean2, cov_frob = [], [], []
+        for i in range(10):
+            L = list(targets == i)
+            # print(targets[L])
+            target_loader = extract_target_loader(loader, L, length = len(L), batch_size = len(L))
+            generator = Jacobian(layer_collection=lc_this,
+                             model=model,
+                             loader=target_loader,
+                             function=output_fn,
+                             n_output=n_output,
+                             centering=False)
+            m = generator.get_jacobian()
+            # print(m.shape)
+            h = m.mean(dim = 1).squeeze()
+            # t = h.shape[0]
+            # print(h/10)
+            mean1.append(h[i,:].reshape([1,-1]))
+            mean2.append(h.reshape([1,-1]))
         for i in range(10):
             L = list(targets == i)
             target_loader = extract_target_loader(loader, L, length = len(L), batch_size = len(L))
@@ -133,33 +143,23 @@ def layer_alignment_matrix(model, output_fn, loader, n_output, centering=True):
                              function=output_fn,
                              n_output=n_output,
                              centering=True)
-            m = generator.get_jacobian()
-            m = m.reshape([m.size(0),-1])
-            mean.append(m.mean(dim = 0))
             cov = PMatDense(generator).frobenius_norm()
             cov_frob.append(cov)
             
-            # if j == 0:
-            #     dic[i] = h[j][l,:,:,:]
-            # h = K[:,l,:].transpose(0,1)
-            # h = h.reshape([h.size(0),-1])
-            # # dic[i] = h.reshape([h.size(0),-1])
-            # mean.append(h.mean(dim = 0))
-            # # print(mean[0].shape)
-            # h -= h.mean(dim = 0)
-            # cov_frob.append(cov_frobenius(h))
-        t = torch.trace(mean_distance(mean))
+        t1 = torch.trace(mean_distance(mean1))
+        t2 = torch.trace(mean_distance(mean2))
         b = sum(cov_frob)
-        means.append(mean)
-        mean_dists.append(t)
+        means.append(mean1)
+        mean_dists.append(t1)
+        mean_dists_2.append(t2)
         cov_frobs.append(cov_frob)
         covs.append(b) #+ frobenius(mean_distance(mean).cpu())
-        ratios.append(t/b)
-
-        # extract_target_loader(baseloader, target, length, batch_size)
+        ratios.append(t1/(b+t2))
+        ratios1.append(b/t1)
+        ratios2.append(t2/t1)
 
     
-    return None, mean_dists, None, covs, ratios
+    return means, mean_dists, mean_dists_2, cov_frobs, covs, ratios, ratios1, ratios2
 
 def compute_trK(align_dl, model, output_fn, n_output):
     generator = Jacobian(model, align_dl, output_fn, n_output=n_output)
