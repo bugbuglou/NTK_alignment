@@ -766,8 +766,8 @@ class RunningAverageEstimator:
 
 
 def stopping_criterion(log):
-    if (log.loc[len(log) - 1]['train_loss'] < 5e-2
-            and log.loc[len(log) - 2]['train_loss'] < 5e-2):
+    if (log.loc[len(log) - 1]['train_loss'] < 1e-1
+            and log.loc[len(log) - 2]['train_loss'] < 1e-1):
         return True
     return False
 
