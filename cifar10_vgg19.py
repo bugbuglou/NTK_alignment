@@ -854,7 +854,7 @@ MC = 1
 model1, dataloaders, criterion = get_task(args)
 dir = args['dir']
 task_dis = args['task'].split('_')[0] + '_' + str(args['depth']) + '_' + str(args['width'])
-torch.save(model1, task_dis+'_vgg19')
+torch.save(model1, args['dir'] +'/' +task_dis+'_vgg19')
 models, optimizers,result_dirs = [], [], []
 for i in range(len(lrs)):
     model_alt = VGG('VGG19', base=args['width'])
@@ -980,7 +980,7 @@ def process(index, lr, model, optimizer, loaders = dataloaders, args = args, tas
             log['iteration3'] = iterations
             log['accuracy3'] = test(model, loaders['mini_test'])[0]
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
-            torch.save(model, task_dis+'_vgg19_trained')
+            torch.save(model, args['dir'] +'/' +task_dis+'_vgg19_trained')
             break
 
         # if acc > 0.99 and stop_acc = False:
