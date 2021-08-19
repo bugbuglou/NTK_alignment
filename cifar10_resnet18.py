@@ -41,7 +41,7 @@ args['diff_type'] = 'random'
 args['align_easy_diff'] = False
 args['epochs'] = 300
 args['no_centering'] = False
-args['dir'] = '/content/drive/MyDrive/NTK_alignment_5' # user fill in
+args['dir'] = '______' # user fill in
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
@@ -851,9 +851,24 @@ import concurrent.futures
 import torch.multiprocessing as mp
 lrs = [0.01, 0.05, 0.1, 0.2, 0.5, 1] #0.003, 0.0005, 0.0002, 0.002, 0.001,
 MC = 1
-_, dataloaders, criterion = get_task(args)
+model1, dataloaders, criterion = get_task(args)
 dir = args['dir']
 task_dis = args['task'].split('_')[0] + '_' + str(args['depth']) + '_' + str(args['width'])
+torch.save(model1, args['dir'] +'/' +task_dis+'_resnet18')
+models, optimizers,result_dirs = [], [], []
+for i in range(len(lrs)):
+    model_alt = ResNet18()
+    model_alt.load_state_dict(model1.state_dict())
+    model_alt = model_alt.to('cuda')
+    models.append(model_alt)
+    optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args['mom']))
+    result_dir = os.path.join(dir, 'lr = ' + str(lrs[i]) + ',' +task_dis)
+    try:
+        os.mkdir(result_dir)
+    except:
+        print('I will be overwriting a previous experiment')
+    result_dirs.append(result_dir)
+
 class RunningAverageEstimator:
 
     def __init__(self, gamma=.9):
@@ -896,13 +911,13 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, lr, loaders = dataloaders, args = args, task_dis = task_dis):
+def process(index, lr, model, optimizer, loaders = dataloaders, args = args, task_dis = task_dis):
     log, log1 = pd.Series(), pd.Series()
     result_dir = os.path.join(dir, 'lr = ' + str(lr) + ',' + task_dis)
     # for i in tqdm(range(MC)):
-    model, _, _ = get_task(args)
-    params = [param for name, param in model.named_parameters()]
-    optimizer = optim.SGD(params, lr, momentum=args['mom'])
+    # model, _, _ = get_task(args)
+    # params = [param for name, param in model.named_parameters()]
+    # optimizer = optim.SGD(params, lr, momentum=args['mom'])
     def output_fn(x, t):
         return model(x)
     rae = RunningAverageEstimator()
@@ -952,6 +967,7 @@ def process(index, lr, loaders = dataloaders, args = args, task_dis = task_dis):
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
             print(log)
             stop_2 = True
+            torch.save(model, args['dir'] +'/' +task_dis+'_resnet18_trained')
             break
 #         if loss1 < 2e-2 and loss2 < 2e-2:
 #             log['layer_align_train_loss3'], _, _ = \
@@ -996,12 +1012,7 @@ def process(index, lr, loaders = dataloaders, args = args, task_dis = task_dis):
 
 
 for i in tqdm(range(len(lrs))):
-    result_dir = os.path.join(dir, 'lr = ' + str(lrs[i]) + ',' + task_dis)
-    try:
-        os.mkdir(result_dir)
-    except:
-        print('I will be overwriting a previous experiment')
-    process(index = 1, lr = lrs[i], loaders = dataloaders, args = args, task_dis = task_dis)
+    process(index = 1, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, task_dis = task_dis)
 
 # processes = []
 # lr = 0.001
