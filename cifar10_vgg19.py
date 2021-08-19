@@ -851,9 +851,24 @@ import concurrent.futures
 import torch.multiprocessing as mp
 lrs = [0.001, 0.002, 0.005, 0.007, 0.01] #0.003, 0.0005, 0.0002, 0.002, 0.001,
 MC = 1
-_, dataloaders, criterion = get_task(args)
+model1, dataloaders, criterion = get_task(args)
 dir = args['dir']
 task_dis = args['task'].split('_')[0] + '_' + str(args['depth']) + '_' + str(args['width'])
+torch.save(model1, task_dis+'_vgg19')
+models, optimizers,result_dirs = [], [], []
+for i in range(len(lrs)):
+    model_alt = VGG('VGG19', base=args['width'])
+    model_alt.load_state_dict(model1.state_dict())
+    model_alt = model_alt.to('cuda')
+    models.append(model_alt)
+    optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args['mom']))
+    result_dir = os.path.join(dir, 'lr = ' + str(lrs[i]) + ',' +task_dis)
+    try:
+        os.mkdir(result_dir)
+    except:
+        print('I will be overwriting a previous experiment')
+    result_dirs.append(result_dir)
+
 class RunningAverageEstimator:
 
     def __init__(self, gamma=.9):
@@ -896,13 +911,13 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, lr, loaders = dataloaders, args = args, task_dis = task_dis):
+def process(index, lr, model, optimizer, loaders = dataloaders, args = args, task_dis = task_dis):
     log, log1 = pd.Series(), pd.Series()
     result_dir = os.path.join(dir, 'lr = ' + str(lr) + ',' + task_dis)
     # for i in tqdm(range(MC)):
-    model, _, _ = get_task(args)
-    params = [param for name, param in model.named_parameters()]
-    optimizer = optim.SGD(params, lr, momentum=args['mom'])
+    # model, _, _ = get_task(args)
+    # params = [param for name, param in model.named_parameters()]
+    # optimizer = optim.SGD(params, lr, momentum=args['mom'])
     def output_fn(x, t):
         return model(x)
     rae = RunningAverageEstimator()
@@ -965,6 +980,7 @@ def process(index, lr, loaders = dataloaders, args = args, task_dis = task_dis):
             log['iteration3'] = iterations
             log['accuracy3'] = test(model, loaders['mini_test'])[0]
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+            torch.save(model, task_dis+'_vgg19_trained')
             break
 
         # if acc > 0.99 and stop_acc = False:
@@ -993,14 +1009,9 @@ def process(index, lr, loaders = dataloaders, args = args, task_dis = task_dis):
     # return f'Done with {lr} at index {index}'    
             
 
-
+# models = []
 for i in tqdm(range(len(lrs))):
-    result_dir = os.path.join(dir, 'lr = ' + str(lrs[i]) + ',' + task_dis)
-    try:
-        os.mkdir(result_dir)
-    except:
-        print('I will be overwriting a previous experiment')
-    process(index = 1, lr = lrs[i], loaders = dataloaders, args = args, task_dis = task_dis)
+    process(index = 1, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, task_dis = task_dis)
 
 # processes = []
 # lr = 0.001
@@ -1021,6 +1032,11 @@ for i in tqdm(range(len(lrs))):
 
 # for p in processes:
 #     p.join()
+
+
+    
+
+
 
 
     
