@@ -42,7 +42,7 @@ args['align_easy_diff'] = False
 args['epochs'] = 300
 args['no_centering'] = False
 args['dir'] = '/users/hert5217/Johnny/results' # user fill in
-device = 'cuda'
+device = 'cpu'
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
