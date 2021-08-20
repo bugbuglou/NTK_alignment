@@ -1013,25 +1013,7 @@ def process(index, lr, model, optimizer, loaders = dataloaders, args = args, tas
 for i in tqdm(range(len(lrs))):
     process(index = 1, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, task_dis = task_dis)
 
-# processes = []
-# lr = 0.001
-# with concurrent.futures.ProcessPoolExecutor() as executor:
-#     results = [executor.submit(process, (lr, index)) for index in range(MC)]
-#     for f in concurrent.futures.as_completed(results):
-#         print(f.result)
-# for lr in lrs:
-#     for index in range(MC):
-#         # try:
-#         #     mp.set_start_method('spawn')
-#         # except Exception as e:
-#         #     pass
-        
-#         p = multiprocessing.Process(target = process, args = (index, lr))
-#         p.start()
-#         processes.append(p)
 
-# for p in processes:
-#     p.join()
 
 
     
