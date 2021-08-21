@@ -1,4 +1,4 @@
-!pip install nngeometry
+# !pip install nngeometry
 import argparse
 # from tasks import get_task
 import time
@@ -39,6 +39,7 @@ args['align_easy_diff'] = False
 args['epochs'] = 300
 args['no_centering'] = False
 args['dir'] = '' # user fill in
+device = 'cpu'
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
@@ -48,14 +49,14 @@ def extract_target_loader(baseloader, target_id, length, batch_size):
     l = target_id
     i = 0
     for d, t in iter(baseloader):
-        datas.append(d.to('cuda'))
-        targets.append(t.to('cuda'))
+        datas.append(d.to(device))
+        targets.append(t.to(device))
         i += d.size(0)
         if i >= length:
             break
     datas = torch.cat(datas)[l]
     targets = torch.cat(targets)[l]
-    dataset = TensorDataset(datas.to('cuda'), targets.to('cuda'))
+    dataset = TensorDataset(datas.to(device), targets.to(device))
 
     return DataLoader(dataset, shuffle=False, batch_size=batch_size)
 
@@ -214,8 +215,8 @@ def get_loss(model, loader):
     # i = 0
     # length = 2000
     for d, t in iter(loader):
-        datas.append(d.to('cuda'))
-        targets.append(t.to('cuda'))
+        datas.append(d.to(device))
+        targets.append(t.to(device))
         # i += d.size(0)
         # if i >= length:
         #     break
@@ -233,7 +234,7 @@ def SIM(model, loader):
     target = one_hot(target).float()
     target -= target.mean(dim=0)
     for d, t in iter(loader):
-        datas.append(d.to('cuda'))
+        datas.append(d.to(device))
     datas = torch.cat(datas)#[:length]
 
     output = model.forward(datas)
@@ -265,7 +266,7 @@ def two_terms_layer(model, output_fn, loader, n_output, centering=True):
     # tar1 = target
     # target -= target.mean(dim=0)
     for d, t in iter(loader):
-        datas.append(d.to('cuda'))
+        datas.append(d.to(device))
     datas = torch.cat(datas)#[:length]
 
     output = model.forward(datas)
@@ -543,21 +544,21 @@ if 'SLURM_TMPDIR' in os.environ:
 def to_tensordataset(dataset):
     d = next(iter(DataLoader(dataset,
                   batch_size=len(dataset))))
-    return TensorDataset(d[0].to('cuda'), d[1].to('cuda'))
+    return TensorDataset(d[0].to(device), d[1].to(device))
 
 def extract_small_loader(baseloader, length, batch_size):
     datas = []
     targets = []
     i = 0
     for d, t in iter(baseloader):
-        datas.append(d.to('cuda'))
-        targets.append(t.to('cuda'))
+        datas.append(d.to(device))
+        targets.append(t.to(device))
         i += d.size(0)
         if i >= length:
             break
     datas = torch.cat(datas)[:length]
     targets = torch.cat(targets)[:length]
-    dataset = TensorDataset(datas.to('cuda'), targets.to('cuda'))
+    dataset = TensorDataset(datas.to(device), targets.to(device))
 
     return DataLoader(dataset, shuffle=False, batch_size=batch_size)
 
@@ -732,9 +733,9 @@ def add_difficult_examples(dataloaders, args):
     x_diff = x_diff[indices]
     y_diff = y_diff[indices]
 
-    dataloaders['micro_train_easy'] = DataLoader(TensorDataset(x_easy.to('cuda'), y_easy.to('cuda')),
+    dataloaders['micro_train_easy'] = DataLoader(TensorDataset(x_easy.to(device), y_easy.to(device)),
                                                  batch_size=100, shuffle=False)
-    dataloaders['micro_train_diff'] = DataLoader(TensorDataset(x_diff.to('cuda'), y_diff.to('cuda')),
+    dataloaders['micro_train_diff'] = DataLoader(TensorDataset(x_diff.to(device), y_diff.to(device)),
                                                  batch_size=100, shuffle=False)
 
 
@@ -782,7 +783,7 @@ def get_task(args):
             raise NotImplementedError
     
 
-    model = model.to('cuda')
+    model = model.to(device)
     kaiming_init(model)
 
     criterion = nn.CrossEntropyLoss()
@@ -813,7 +814,7 @@ models, optimizers,result_dirs = [], [], []
 for i in range(len(lrs)):
     model_alt = FC(depth = args['depth'], width = args['width'])
     model_alt.load_state_dict(model1.state_dict())
-    model_alt = model_alt.to('cuda')
+    model_alt = model_alt.to(device)
     models.append(model_alt)
     params = [param for name, param in models[i].named_parameters()] # if 'in_features' in name or 'out_features' in name]
     # print(params)
@@ -874,7 +875,7 @@ def train(model, optimizer, args, log, result_dir):
             print('stopping now')
             break
         for batch_idx, (inputs, targets) in enumerate(dataloaders['train']):
-            inputs, targets = inputs.to('cuda'), targets.to('cuda')
+            inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = criterion(outputs, targets)
@@ -977,7 +978,7 @@ def test(model, loader):
     total = 0
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(loader):
-            inputs, targets = inputs.to('cuda'), targets.to('cuda')
+            inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
 
