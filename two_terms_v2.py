@@ -834,7 +834,7 @@ def train(model, optimizer, args, log, result_dir):
         if len(log) >= 2 and stopping_criterion(log):
             print('stopping now')
             break
-        for batch_idx, (inputs, targets) in enumerate(dataloaders['micro_train']):
+        for batch_idx, (inputs, targets) in enumerate(dataloaders['train']):
             inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -871,7 +871,7 @@ def train(model, optimizer, args, log, result_dir):
                 # to_log['corr_y_train'] = SIM(model, dataloaders['micro_train'])
                 # to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
 
-                to_log['two_terms_train_1'] = two_terms(model, output_fn, dataloaders['micro_train'], 10, centering=True)
+                to_log['two_terms_train_1'] = two_terms(model, output_fn, dataloaders['train'], 10, centering=True)
                 to_log['two_terms_test_1'] = two_terms(model, output_fn, dataloaders['micro_test'], 10, centering=True)
 
                     # means, mean_dists, cov_frobs, covs
