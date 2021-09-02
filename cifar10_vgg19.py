@@ -1,4 +1,4 @@
-# !pip install nngeometry
+!pip install nngeometry
 import argparse
 # from tasks import get_task
 import time
@@ -41,8 +41,8 @@ args['diff_type'] = 'random'
 args['align_easy_diff'] = False
 args['epochs'] = 300
 args['no_centering'] = False
-args['dir'] = '/users/hert5217/Johnny/results' # user fill in
-device = 'cpu'
+args['dir'] = '' # user fill in
+device = 'cuda'
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
