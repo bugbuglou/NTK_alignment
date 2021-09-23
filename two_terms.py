@@ -38,7 +38,7 @@ args['diff_type'] = 'random'
 args['align_easy_diff'] = False
 args['epochs'] = 300
 args['no_centering'] = False
-args['dir'] = '' # user fill in
+args['dir'] = '/users/hert5217/Johnny/results' # user fill in
 device = 'cpu'
 
 
