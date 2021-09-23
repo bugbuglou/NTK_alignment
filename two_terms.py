@@ -340,7 +340,8 @@ def align_mat(K_prev, model, output_fn, loader, n_output, centering, compute_dif
     target = one_hot(target).float()
     # tar1 = target
     target -= target.mean(dim=0)
-    target = FVector(vector_repr=target.t().contiguous())
+    targets = FVector(vector_repr=target.t().contiguous())
+    target = targets.get_flat_representation().view(-1)
     lc = LayerCollection.from_model(model)
     result_K, align_1, align_2 = [], [], []
     index = 0
