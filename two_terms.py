@@ -23,7 +23,7 @@ import torch.optim as optim
 
 args = {}
 args['depth'] = 10#6
-args['width'] = 256 #256
+args['width'] = 255 #256
 args['task'] = 'mnist_fcfree' #'mnist_fc'
 # args[align_train] = True
 # args[align_test] = True
@@ -303,14 +303,14 @@ def two_terms_layer(model, output_fn, loader, n_output, centering=True):
                              centering=centering)
         K_dense = FMatDense(generator)
         align = K_dense.vTMv(targets)
-        print(align)
+        # print(align)
         K = K_dense.data
         sd = K.size()
         K = K.view(sd[0]*sd[1], sd[2]*sd[3])
         # t = targets.get_flat_representation().view(-1)
         yTKy = torch.dot(target, torch.mv(K, target))
         # yTKy = torch.dot(target, yTKy)
-        print(yTKy)
+        # print(yTKy)
         yTKy_normal = yTKy/(torch.norm(target)**2)
         align = yTKy_normal/(torch.norm(K))
         # align = align/(torch.norm(K) * torch.norm(target)**2)
@@ -332,6 +332,46 @@ def two_terms_layer(model, output_fn, loader, n_output, centering=True):
 
    
     return result1s, result2s, aligns 
+
+def align_mat(K_prev, model, output_fn, loader, n_output, centering, compute_difference = True):
+    datas = []
+    target = torch.cat([args[1] for args in iter(loader)])
+    # tar = target
+    target = one_hot(target).float()
+    # tar1 = target
+    target -= target.mean(dim=0)
+    targets = FVector(vector_repr=target.t().contiguous())
+    lc = LayerCollection.from_model(model)
+    result_K, align_1, align_2 = [], [], []
+    index = 0
+    for l in lc.layers.items():
+        # print(l)
+        lc_this = LayerCollection()
+        lc_this.add_layer(*l)
+
+        generator = Jacobian(layer_collection=lc_this,
+                             model=model,
+                             loader=loader,
+                             function=output_fn,
+                             n_output=n_output,
+                             centering=centering)
+        K_dense = FMatDense(generator)
+        K = K_dense.data
+        sd = K.size()
+        K = K.view(sd[0]*sd[1], sd[2]*sd[3])
+        result_K.append(K)
+        if compute_difference:
+            dK = K - K_prev[index]
+            ytdky = torch.dot(target, torch.mv(dK, target))
+            ytky = torch.dot(target, torch.mv(K_prev[index], target))
+            align_1.append(ytdky/ytky)
+            print(align_1)
+            align_2.append(torch.trace(torch.matmul(dK, K_prev[index]))/(torch.norm(K_prev[index])**2))
+            print(align_2)
+        index+=1
+    return result_K, align_1, align_2
+    
+
 
 def compute_trK(align_dl, model, output_fn, n_output):
     generator = Jacobian(model, align_dl, output_fn, n_output=n_output)
@@ -792,10 +832,10 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 2000, 200)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 500, 500)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
-    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 2000, 200)
-    dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
+    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 500, 500)
+    dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 500, 500)
 
     return model, dataloaders, criterion
   
@@ -865,6 +905,7 @@ def train(model, optimizer, args, log, result_dir):
     correct = 0
     total = 0
     iterations = 0
+    K_prev = pd.Series()
 
     # if args.complexity:
     #     w_before = PVector.from_model(model).clone().detach()
@@ -903,16 +944,17 @@ def train(model, optimizer, args, log, result_dir):
                 # to_log['l'] = get_loss(model, dataloaders['micro_train'])
                 # to_log['l_test'] = get_loss(model, dataloaders['micro_test'])
 
-                # if len(log) > 0:
-                #     W= SIM(model, dataloaders['micro_train']) + W
-                # else:
-                #     W = SIM(model, dataloaders['micro_train'])
+                if iterations == 0:
+                    K_prev['K_prev_train'], to_log['two_terms_train_1'], to_log['two_terms_train_2'] = align_mat(0, model, output_fn, dataloaders['micro_train'], 10, centering=True, compute_difference = False)
+                    K_prev['K_prev_test'], to_log['two_terms_test_1'], to_log['two_terms_test_2'] = align_mat(0, model, output_fn, dataloaders['micro_test'], 10, centering=True, compute_difference = False)
 
-                to_log['corr_y_train'] = SIM(model, dataloaders['micro_train'])
-                to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
-
-                to_log['two_terms_train_1'], to_log['two_terms_train_2'], to_log['layer_align_train'] = two_terms_layer(model, output_fn, dataloaders['micro_train'], 10, centering=True)
-                to_log['two_terms_test_1'], to_log['two_terms_test_2'], to_log['layer_align_test'] = two_terms_layer(model, output_fn, dataloaders['micro_test'], 10, centering=True)
+                # to_log['corr_y_train'] = SIM(model, dataloaders['micro_train'])
+                # to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
+                else:
+                    K_prev['K_prev_train'], to_log['two_terms_train_1'], to_log['two_terms_train_2'] = align_mat(K_prev['K_prev_train'], model, output_fn, dataloaders['micro_train'], 10, centering=True)
+                    K_prev['K_prev_test'], to_log['two_terms_test_1'], to_log['two_terms_test_2'] = align_mat(K_prev['K_prev_test'], model, output_fn, dataloaders['micro_test'], 10, centering=True)
+                # to_log['two_terms_train_1'], to_log['two_terms_train_2'], to_log['layer_align_train'] = two_terms_layer(model, output_fn, dataloaders['micro_train'], 10, centering=True)
+                # to_log['two_terms_test_1'], to_log['two_terms_test_2'], to_log['layer_align_test'] = two_terms_layer(model, output_fn, dataloaders['micro_test'], 10, centering=True)
 
                     # means, mean_dists, cov_frobs, covs
                 # to_log['layer_align_train_ratio3'], to_log['layer_align_train_means'],  to_log['layer_align_train_means_2'], _, to_log['layer_align_train_covs'], to_log['layer_align_train_ratio'], to_log['layer_align_train_ratio1'], to_log['layer_align_train_ratio2'] = \
@@ -1040,8 +1082,8 @@ if args['align_easy_diff']:
 # columns.append('l')
 # columns.append('l_test')
 # # columns.append('W')
-columns.append('corr_y_train')
-columns.append('corr_y_test')
+columns.append('K_prev_train')
+columns.append('K_prev_test')
 columns.append('two_terms_train_1')
 columns.append('two_terms_train_2')
 columns.append('two_terms_test_1')
