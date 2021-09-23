@@ -947,7 +947,7 @@ def train(model, optimizer, args, log, result_dir):
                 if iterations == 0:
                     K_prev['K_prev_train'], to_log['two_terms_train_1'], to_log['two_terms_train_2'] = align_mat(0, model, output_fn, dataloaders['micro_train'], 10, centering=True, compute_difference = False)
                     K_prev['K_prev_test'], to_log['two_terms_test_1'], to_log['two_terms_test_2'] = align_mat(0, model, output_fn, dataloaders['micro_test'], 10, centering=True, compute_difference = False)
-                print(K_prev['K_prev_train'][0].shape)
+                    print(K_prev['K_prev_train'][0].shape)
                 # to_log['corr_y_train'] = SIM(model, dataloaders['micro_train'])
                 # to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
                 else:
