@@ -253,19 +253,20 @@ def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, K_prev_generator, n
 def utils_corr_numerator(H_w, generator, K_prev_generator, w, device):
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     delta_psi = delta_psi.to(device)
+    sd0,sd1,sd2 = delta_psi.shape
     w.to(device)
     # print(delta_psi.device)
     # print(H_w.device)
     # print(w.device)
     # print(K_prev_generator.get_jacobian().to(device).device)
-    result = torch.trace(torch.matmul(delta_psi, torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).transpose(1,0), torch.matmul(w, w.transpose(1,0))))))
+    result = torch.trace(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]), torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), torch.matmul(w, w.transpose(1,0))))))
     return torch.sqrt(result)
 
 def utils_corr_denom(H_w, generator, K_prev_generator, w, device):
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     delta_psi.to(device)
-    a = torch.norm(torch.matmul(delta_psi.transpose(1,0), delta_psi))
-    v = torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).transpose(1,0), w)) * torch.norm(w)**2
+    a = torch.norm(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0), delta_psi.reshape([sd0*sd1, sd2])))
+    v = torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)) * torch.norm(w)**2
     return torch.norm(v) * a
 
 
