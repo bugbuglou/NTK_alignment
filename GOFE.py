@@ -265,6 +265,7 @@ def utils_corr_numerator(H_w, generator, K_prev_generator, w, device):
 def utils_corr_denom(H_w, generator, K_prev_generator, w, device):
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     delta_psi.to(device)
+    sd0,sd1,sd2 = delta_psi.shape
     a = torch.norm(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0), delta_psi.reshape([sd0*sd1, sd2])))
     v = torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)) * torch.norm(w)**2
     return torch.norm(v) * a
