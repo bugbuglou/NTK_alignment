@@ -1076,7 +1076,7 @@ def get_task(args):
             raise NotImplementedError
     
 
-    model = model.to('cuda')
+    model = model.to(device)
     kaiming_init(model)
 
     criterion = nn.CrossEntropyLoss()
