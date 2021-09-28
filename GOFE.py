@@ -171,10 +171,10 @@ def compute_hessian(model, loader, num_eigenthing, cal_target = False):
         return torch.sum(inp * W)/(torch.norm(W)) + F.cross_entropy(inp, tar) - F.cross_entropy(inp, tar)
     if cal_target:
         eigenvals, eigenvecs = compute_hessian_eigenthings(model, loader,
-                                                      Loss_y, num_eigenthing)
+                                                      Loss_y, num_eigenthing, use_gpu=False)
     else:
         eigenvals, eigenvecs = compute_hessian_eigenthings(model, loader,
-                                                      Loss, num_eigenthing)
+                                                      Loss, num_eigenthing, use_gpu=False)
         
     return eigenvals, eigenvecs, organise(W), organise(target)
     
