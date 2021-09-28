@@ -250,15 +250,15 @@ def gofe_corr(model, loader, eigvals, eigvecs, w, K_prev_generator, n_output, de
 
 
 
-def utils_corr_numerator(H_w, generator, K_prev_generator, w, Device):
+def utils_corr_numerator(H_w, generator, K_prev_generator, w, device):
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
-    delta_psi = delta_psi.to(Device)
-    w.to(Device)
+    delta_psi = delta_psi.to(device)
+    w.to(device)
     # print(delta_psi.device)
     # print(H_w.device)
     # print(w.device)
-    # print(K_prev_generator.get_jacobian().to(Device).device)
-    result = torch.trace(torch.matmul(delta_psi.transpose(1,0), torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(Device), torch.matmul(w, w.transpose(1,0))))))
+    # print(K_prev_generator.get_jacobian().to(device).device)
+    result = torch.trace(torch.matmul(delta_psi.transpose(1,0), torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device), torch.matmul(w, w.transpose(1,0))))))
     return torch.sqrt(result)
 
 def utils_corr_denom(H_w, generator, K_prev_generator, w, device):
