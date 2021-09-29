@@ -28,7 +28,7 @@ from hessian_eigenthings import compute_hessian_eigenthings
 from pyhessian import hessian
 
 args = {}
-args['depth'] = 10#6
+args['depth'] = 5#6
 args['width'] = 256 #256
 args['last'] = 256
 args['num_eigenthings'] = 10
