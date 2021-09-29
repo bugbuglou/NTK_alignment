@@ -1090,8 +1090,8 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 10000, 128)
-    dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 10000, 10000)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 5000, 128)
+    dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 5000, 5000)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
     dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 2000, 2000)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
