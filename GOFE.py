@@ -1291,9 +1291,10 @@ def process(index):
                 to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], _ = compute_hessian(model, dataloaders['micro_test'],
                                                                   args['num_eigenthings'])
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
-
-                to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], model_prev = model_prev, n_output = 10, device = device, centering = True)
-                to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], model_prev = model_prev, n_output = 10, device = device, centering = True)
+                if iterations > 0:
+                    
+                    to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = True)
+                    to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = True)
                 
 
                 num = args['num_eigenthings']
