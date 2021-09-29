@@ -260,6 +260,7 @@ def utils_corr_numerator(H_w, generator, K_prev_generator, w, device):
     # print(w.device)
     # print(K_prev_generator.get_jacobian().to(device).device)
     result = torch.trace(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]), torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), torch.matmul(w, w.transpose(1,0))))))
+    print(result)
     return torch.sqrt(result)
 
 def utils_corr_denom(H_w, generator, K_prev_generator, w, device):
@@ -267,7 +268,9 @@ def utils_corr_denom(H_w, generator, K_prev_generator, w, device):
     delta_psi.to(device)
     sd0,sd1,sd2 = delta_psi.shape
     a = torch.norm(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0), delta_psi.reshape([sd0*sd1, sd2])))
+    print(a)
     v = torch.matmul(H_w, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)) * torch.norm(w)**2
+    print(torch.norm(v))
     return torch.norm(v) * a
 
 
@@ -1149,7 +1152,7 @@ def stopping_criterion(log):
 
 def do_compute_ntk(iterations):
     # return iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
-    return iterations == 0 or iterations in (1 * len(dataloaders['train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
+    return iterations == 0 or iterations in (1 * len(dataloaders['micro_train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
 
 
 def test(model, loader):
