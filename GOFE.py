@@ -1210,6 +1210,8 @@ def process(index):
     columns.append('correlation_matrix')
     columns.append('eigenvals')
     columns.append('eigenvecs') 
+    columns.append('eigenvals_test')
+    columns.append('eigenvecs_test') 
     columns.append('w_train')
     columns.append('w_test')
     columns.append('corr_gofe_train')
