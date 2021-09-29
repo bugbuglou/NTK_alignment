@@ -1090,8 +1090,8 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 2000, 200)
-    dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 2000, 2000)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 10000, 128)
+    dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 10000, 10000)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
     dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 2000, 2000)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
@@ -1206,21 +1206,21 @@ def process(index):
     def output_fn(x, t):
         return model(x)
     rae = RunningAverageEstimator()
-#     model.eval()
-#     LC = LayerCollection.from_model(model)
-#     K_prev_generator_train = Jacobian(layer_collection=LC,
-#                           model=model,
-#                           loader=dataloaders['micro_train'],
-#                           function=output_fn,
-#                           n_output=10,
-#                           centering=True)
+    model.eval()
+    LC = LayerCollection.from_model(model)
+    K_prev_generator_train = Jacobian(layer_collection=LC,
+                          model=model,
+                          loader=dataloaders['micro_train'],
+                          function=output_fn,
+                          n_output=10,
+                          centering=True)
     
-#     K_prev_generator_test = Jacobian(layer_collection=LC,
-#                           model=model,
-#                           loader=dataloaders['micro_test'],
-#                           function=output_fn,
-#                           n_output=10,
-#                           centering=True)
+    K_prev_generator_test = Jacobian(layer_collection=LC,
+                          model=model,
+                          loader=dataloaders['micro_test'],
+                          function=output_fn,
+                          n_output=10,
+                          centering=True)
     model.train()
     train_loss = 0
     correct = 0
@@ -1241,7 +1241,7 @@ def process(index):
     # if args.complexity:
     #     w_before = PVector.from_model(model).clone().detach()
      
-    for epoch in range(10):
+    for epoch in range(args['epochs']):
         print('\nEpoch: %d' % epoch)
         if len(log) >= 2 and stopping_criterion(log):
             torch.save(model, os.path.join(result_dirs[index],'model.pkl'))
@@ -1276,8 +1276,8 @@ def process(index):
                                                                   args['num_eigenthings'])
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
 
-#                 K_prev_generator_train, to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], K_prev_generator_train, n_output = 10, device = device, centering = True)
-#                 K_prev_generator_test, to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], K_prev_generator_test, n_output = 10, device = device, centering = True)
+                K_prev_generator_train, to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], K_prev_generator_train, n_output = 10, device = device, centering = True)
+                K_prev_generator_test, to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], K_prev_generator_test, n_output = 10, device = device, centering = True)
                 
 
                 num = args['num_eigenthings']
