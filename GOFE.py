@@ -1206,21 +1206,21 @@ def process(index):
     def output_fn(x, t):
         return model(x)
     rae = RunningAverageEstimator()
-    model.eval()
-    LC = LayerCollection.from_model(model)
-    K_prev_generator_train = Jacobian(layer_collection=LC,
-                          model=model,
-                          loader=dataloaders['micro_train'],
-                          function=output_fn,
-                          n_output=10,
-                          centering=True)
+#     model.eval()
+#     LC = LayerCollection.from_model(model)
+#     K_prev_generator_train = Jacobian(layer_collection=LC,
+#                           model=model,
+#                           loader=dataloaders['micro_train'],
+#                           function=output_fn,
+#                           n_output=10,
+#                           centering=True)
     
-    K_prev_generator_test = Jacobian(layer_collection=LC,
-                          model=model,
-                          loader=dataloaders['micro_test'],
-                          function=output_fn,
-                          n_output=10,
-                          centering=True)
+#     K_prev_generator_test = Jacobian(layer_collection=LC,
+#                           model=model,
+#                           loader=dataloaders['micro_test'],
+#                           function=output_fn,
+#                           n_output=10,
+#                           centering=True)
     model.train()
     train_loss = 0
     correct = 0
