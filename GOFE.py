@@ -29,8 +29,8 @@ from pyhessian import hessian
 
 args = {}
 args['depth'] = 10#6
-args['width'] = 32 #256
-args['last'] = 32
+args['width'] = 256 #256
+args['last'] = 256
 args['num_eigenthings'] = 10
 args['task'] = 'mnist_fcfree' #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
