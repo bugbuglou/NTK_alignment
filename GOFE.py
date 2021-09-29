@@ -1275,8 +1275,8 @@ def process(index):
                                                                   args['num_eigenthings'])
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
 
-                K_prev_generator_train, to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], K_prev_generator_train, n_output = 10, device = device, centering = True)
-                K_prev_generator_test, to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], K_prev_generator_test, n_output = 10, device = device, centering = True)
+#                 K_prev_generator_train, to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], K_prev_generator_train, n_output = 10, device = device, centering = True)
+#                 K_prev_generator_test, to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], K_prev_generator_test, n_output = 10, device = device, centering = True)
                 
 
                 num = args['num_eigenthings']
