@@ -227,14 +227,23 @@ def compute_hessian_spectrum(model, loader, path, cal_target = False):
 
     return density_eigen, density_weight
 
-def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, K_prev_generator, n_output, device, centering):
+def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
     
     H_w = torch.matmul(torch.from_numpy(eigvecs.copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
     H_w.to(device)
     print(H_w.device)
     w.to(device)
-
+    def output_fn_prev(x, t):
+        return model_prev(x)
+    lc_prev = LayerCollection.from_model(model_prev)
+    K_prev_generator = Jacobian(layer_collection=lc_prev,
+                         model=model_prev,
+                         loader=loader,
+                         function=output_fn_prev,
+                         n_output=n_output,
+                         centering=centering)
+    
     lc = LayerCollection.from_model(model)
     generator = Jacobian(layer_collection=lc,
                          model=model,
@@ -242,11 +251,12 @@ def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, K_prev_generator, n
                          function=output_fn,
                          n_output=n_output,
                          centering=centering)
-    # delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
+#     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
+#     print(delta_psi)
     
     corr = utils_corr_numerator(H_w, generator, K_prev_generator, w, device)/(utils_corr_denom(H_w, generator, K_prev_generator, w, device))
 
-    return generator, corr
+    return corr
 
 
 
@@ -266,6 +276,7 @@ def utils_corr_numerator(H_w, generator, K_prev_generator, w, device):
 def utils_corr_denom(H_w, generator, K_prev_generator, w, device):
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     delta_psi.to(device)
+    print(delta_psi)
     sd0,sd1,sd2 = delta_psi.shape
     a = torch.norm(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0), delta_psi.reshape([sd0*sd1, sd2])))
     print(a)
@@ -1107,7 +1118,7 @@ model_path = os.path.join(dir, task_dis + '_model')
 # torch.save(model1, model_path)
 # model1 = torch.load(model_path)
 
-lrs = [0.0005, 0.003, 0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
+lrs = [0.003, 0.0005, 0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
 # lrs = [1e-4, 5e-4]
 
 models, optimizers,result_dirs = [], [], []
@@ -1206,21 +1217,22 @@ def process(index):
     def output_fn(x, t):
         return model(x)
     rae = RunningAverageEstimator()
-    model.eval()
-    LC = LayerCollection.from_model(model)
-    K_prev_generator_train = Jacobian(layer_collection=LC,
-                          model=model,
-                          loader=dataloaders['micro_train'],
-                          function=output_fn,
-                          n_output=10,
-                          centering=True)
+#     model.eval()
+#     LC = LayerCollection.from_model(model)
+#     K_prev_generator_train = Jacobian(layer_collection=LC,
+#                           model=model,
+#                           loader=dataloaders['micro_train'],
+#                           function=output_fn,
+#                           n_output=10,
+#                           centering=True)
     
-    K_prev_generator_test = Jacobian(layer_collection=LC,
-                          model=model,
-                          loader=dataloaders['micro_test'],
-                          function=output_fn,
-                          n_output=10,
-                          centering=True)
+#     K_prev_generator_test = Jacobian(layer_collection=LC,
+#                           model=model,
+#                           loader=dataloaders['micro_test'],
+#                           function=output_fn,
+#                           n_output=10,
+#                           centering=True)
+    
     model.train()
     train_loss = 0
     correct = 0
@@ -1243,6 +1255,9 @@ def process(index):
      
     for epoch in range(args['epochs']):
         print('\nEpoch: %d' % epoch)
+        model_prev = FC(depth = args['depth'], width = args['width'], last = args['last'])
+        model_prev.load_state_dict(model.state_dict())
+        model_prev = model_prev.to(device)
         if len(log) >= 2 and stopping_criterion(log):
             torch.save(model, os.path.join(result_dirs[index],'model.pkl'))
             print('stopping now')
@@ -1276,8 +1291,8 @@ def process(index):
                                                                   args['num_eigenthings'])
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
 
-                K_prev_generator_train, to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], K_prev_generator_train, n_output = 10, device = device, centering = True)
-                K_prev_generator_test, to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], K_prev_generator_test, n_output = 10, device = device, centering = True)
+                to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], model_prev = model_prev, n_output = 10, device = device, centering = True)
+                to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], model_prev = model_prev, n_output = 10, device = device, centering = True)
                 
 
                 num = args['num_eigenthings']
