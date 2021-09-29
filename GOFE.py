@@ -31,7 +31,7 @@ args = {}
 args['depth'] = 10#6
 args['width'] = 32 #256
 args['last'] = 32
-args['num_eigenthings'] = 100
+args['num_eigenthings'] = 500
 args['task'] = 'mnist_fcfree' #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
 # args[align_train] = True
@@ -1216,6 +1216,8 @@ def process(index):
     columns.append('w_test')
     columns.append('corr_gofe_train')
     columns.append('corr_gofe_test')
+    columns.append('corr_gofe_train_layer')
+    columns.append('corr_gofe_test_layer')
     log=pd.DataFrame(columns=columns)
     model = models[index]
     optimizer = optimizers[index]
@@ -1297,8 +1299,10 @@ def process(index):
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
                 if iterations > 0:
                     
-                    to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = True)
-                    to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = True)
+                    to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+                    to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+#                     to_log['corr_gofe_train_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+#                     to_log['corr_gofe_test_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
                 
 
                 num = args['num_eigenthings']
