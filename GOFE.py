@@ -28,10 +28,10 @@ from hessian_eigenthings import compute_hessian_eigenthings
 from pyhessian import hessian
 
 args = {}
-args['depth'] = 10#6
+args['depth'] = 5#6
 args['width'] = 32 #256
 args['last'] = 32
-args['num_eigenthings'] = 500
+args['num_eigenthings'] = 10
 args['task'] = 'mnist_fcfree' #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
 # args[align_train] = True
@@ -258,7 +258,95 @@ def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_outpu
 
     return corr
 
+def gofe_eig_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
+    # compute correlation between delta psi and HPsiwwT
+    
+#     H_w = torch.matmul(torch.from_numpy(eigvecs.copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
+#     H_w.to(device)
+#     print(H_w.device)
+#     w.to(device)
+    v1 = torch.from_numpy(eigvecs.copy())[0,:]
+    print(v1.shape)
+    
+    def output_fn_prev(x, t):
+        return model_prev(x)
+    lc_prev = LayerCollection.from_model(model_prev)
+    K_prev_generator = Jacobian(layer_collection=lc_prev,
+                         model=model_prev,
+                         loader=loader,
+                         function=output_fn_prev,
+                         n_output=n_output,
+                         centering=centering)
+    
+    lc = LayerCollection.from_model(model)
+    generator = Jacobian(layer_collection=lc,
+                         model=model,
+                         loader=loader,
+                         function=output_fn,
+                         n_output=n_output,
+                         centering=centering)
+    delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
+    sd0,sd1,sd2 = delta_psi.shape
+    proj_v1_del = torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0))
+    pro_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), torch.matmul(w, w.transpose(1,0))))
+    
+    
+#     print(delta_psi)
+    
+    corr = torch.dot(proj_v1_del, proj_v1_diff)/(torch.norm(proj_v1_del) * torch.norm(proj_v1_diff))
+    print(corr)
+    return corr
 
+def ofe_layer_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
+    # compute correlation between delta psi and HPsiwwT
+    
+#     H_w = torch.matmul(torch.from_numpy(eigvecs.copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
+#     H_w.to(device)
+#     print(H_w.device)
+#     w.to(device)
+    
+    def output_fn_prev(x, t):
+        return model_prev(x)
+    
+    lc_prev = LayerCollection.from_model(model_prev)
+    lc = LayerCollection.from_model(model)
+    generators_prev, generators = [], []
+    for l in lc.layers.items():
+        # print(l)
+        lc_this = LayerCollection()
+        lc_this.add_layer(*l)
+        
+        generator = Jacobian(layer_collection=lc_this,
+                             model=model,
+                             loader=loader,
+                             function=output_fn,
+                             n_output=n_output,
+                             centering=centering)
+        generators.append(generator)
+        
+    for l in lc_prev.layers.items():
+        # print(l)
+        lc_this = LayerCollection()
+        lc_this.add_layer(*l)
+        
+        generator = Jacobian(layer_collection=lc_this,
+                             model=model_prev,
+                             loader=loader,
+                             function=output_fn_prev,
+                             n_output=n_output,
+                             centering=centering)
+        generators_prev.append(generator)
+    corrs = []
+    for i in range(len(generators)):
+        generator, K_prev_generator = generators[i], generators_prev[i]
+        delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
+        sd0,sd1,sd2 = delta_psi.shape
+        diff_psi = torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), torch.matmul(w, w.transpose(1,0)))
+        corr = torch.trace(torch.matmul(delta_psi.reshape([sd0*sd1, sd2]), diff_psi))/(torch.norm(diff_psi) * torch.norm(delta_psi))
+        print(corr)
+        corrs.append(corr)
+    return corrs
+    
 
 def utils_corr_numerator(H_w, generator, K_prev_generator, w, device):
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
@@ -1216,8 +1304,10 @@ def process(index):
     columns.append('w_test')
     columns.append('corr_gofe_train')
     columns.append('corr_gofe_test')
-    columns.append('corr_gofe_train_layer')
-    columns.append('corr_gofe_test_layer')
+    columns.append('corr_ofe_train_layer')
+    columns.append('corr_ofe_test_layer')
+    columns.append('corr_gofe_train_eig1')
+    columns.append('corr_gofe_test_eig1')
     log=pd.DataFrame(columns=columns)
     model = models[index]
     optimizer = optimizers[index]
@@ -1299,12 +1389,14 @@ def process(index):
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
                 if iterations > 0:
                     
-                    to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
-                    to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+#                     to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+#                     to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_train_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_test_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
-                
-
+                      to_log['corr_gofe_train_eig1'] = gofe_eig_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+                      to_log['corr_gofe_test_eig1'] = gofe_eig_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+                      to_log['corr_ofe_train_layer'] = ofe_layer_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
+                      to_log['corr_ofe_test_layer'] = ofe_layer_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
                 num = args['num_eigenthings']
                 to_log['correlation_matrix'] = np.zeros([num,num,args['depth']])
                 for j in range(num):
