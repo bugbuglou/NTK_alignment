@@ -294,7 +294,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
     proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32))[:10,:10],torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
     
 #     print(delta_psi)
-    
+    prinit(proj_v1_diff.shape)
     corr = torch.dot(proj_v1_del, proj_v1_diff)/(torch.norm(proj_v1_del) * torch.norm(proj_v1_diff))
     corr1 = torch.dot(w,t)/(torch.norm(w)*torch.norm(t))
 #     print(proj_v1_del)
