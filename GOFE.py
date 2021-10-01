@@ -287,7 +287,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
                          centering=centering)
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     sd0,sd1,sd2 = delta_psi.shape
-    proj_v1_del = torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0), t)
+    proj_v1_del = torch.matmul(torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
     proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
     p2 = proj_v1_diff * eigvals[0] * lr
     
@@ -1423,10 +1423,10 @@ def process(index):
                 to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
 
                 to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], tar = compute_hessian(model, dataloaders['micro_train'],
-                                                                  args['num_eigenthings'])
+                                                                  args['num_eigenthings'], cal_target = True)
                 
                 to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], tar_test = compute_hessian(model, dataloaders['micro_test'],
-                                                                  args['num_eigenthings'])
+                                                                  args['num_eigenthings'], cal_target = True)
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
                 if iterations > 0:
                     gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
