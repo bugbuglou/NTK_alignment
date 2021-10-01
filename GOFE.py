@@ -1190,8 +1190,8 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 5000, 128)
-    dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 5000, 5000)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 2000, 2000)
+#     dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 2000, 2000)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
     dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 2000, 2000)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
@@ -1381,7 +1381,7 @@ def process(index):
                 to_log['corr_y_train'] = SIM(model, dataloaders['micro_train'])
                 to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
 
-                to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], _ = compute_hessian(model, dataloaders['micro_train_1'],
+                to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], _ = compute_hessian(model, dataloaders['micro_train'],
                                                                   args['num_eigenthings'])
                 
                 to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], _ = compute_hessian(model, dataloaders['micro_test'],
