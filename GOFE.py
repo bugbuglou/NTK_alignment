@@ -265,7 +265,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     H_w.to(device)
 #     print(H_w.device)
 #     w.to(device)
-    v1 = torch.from_numpy(eigvecs.copy())[0,:]
+    eigs = torch.from_numpy(eigvecs.copy())
 #     print(v1.shape)
     
     def output_fn_prev(x, t):
@@ -287,17 +287,20 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
                          centering=centering)
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     sd0,sd1,sd2 = delta_psi.shape
-    proj_v1_del = torch.matmul(torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
-    proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
-    p2 = proj_v1_diff * eigvals[0] * lr
-    
+#     proj_v1_del = torch.matmul(torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
+#     proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
+#     p2 = proj_v1_diff * eigvals[0] * lr
+    proj_v1_del = torch.matmul(torch.matmul(eig, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
+    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)),torch.matmul(eig, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
     
 #     print(delta_psi)
     
-#     corr = torch.dot(proj_v1_del, proj_v1_diff)/(torch.norm(proj_v1_del) * torch.norm(proj_v1_diff))
-    print(proj_v1_del)
-    print(p2)
-#     return corr
+    corr = torch.dot(proj_v1_del, proj_v1_diff)/(torch.norm(proj_v1_del) * torch.norm(proj_v1_diff))
+    corr1 = torch.dot(w,t)/(torch.norm(w)*torch.norm(t))
+#     print(proj_v1_del)
+#     print(p2)
+    print(corr)
+    print(corr1)
 
 def gofe_eig_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
