@@ -296,7 +296,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     print(delta_psi)
     print(proj_v1_diff.shape)
     corr = torch.dot(proj_v1_del.squeeze(1), proj_v1_diff.squeeze(1))/(torch.norm(proj_v1_del) * torch.norm(proj_v1_diff))
-    corr1 = torch.dot(w.squeeze(0),t.squeeze(0))/(torch.norm(w)*torch.norm(t))
+    corr1 = torch.dot(w.squeeze(1),t.squeeze(1))/(torch.norm(w)*torch.norm(t))
 #     print(proj_v1_del)
 #     print(p2)
     print(corr)
