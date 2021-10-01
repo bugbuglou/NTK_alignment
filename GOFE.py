@@ -31,7 +31,7 @@ args = {}
 args['depth'] = 5#6
 args['width'] = 32 #256
 args['last'] = 32
-args['num_eigenthings'] = 10
+args['num_eigenthings'] = 50
 args['task'] = 'mnist_fcfree' #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
 # args[align_train] = True
@@ -265,7 +265,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     H_w.to(device)
 #     print(H_w.device)
 #     w.to(device)
-    eigs = torch.from_numpy(eigvecs.copy())
+    eigs = torch.from_numpy(eigvecs.copy())[:10,:]
 #     print(v1.shape)
     
     def output_fn_prev(x, t):
@@ -290,8 +290,8 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     proj_v1_del = torch.matmul(torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
 #     proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
 #     p2 = proj_v1_diff * eigvals[0] * lr
-    proj_v1_del = torch.matmul(torch.matmul(eig, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
-    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)),torch.matmul(eig, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
+    proj_v1_del = torch.matmul(torch.matmul(eigs, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
+    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32))[:10,:10],torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
     
 #     print(delta_psi)
     
