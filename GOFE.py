@@ -288,7 +288,7 @@ def gofe_eig_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_o
     delta_psi = - generator.get_jacobian() + K_prev_generator.get_jacobian()
     sd0,sd1,sd2 = delta_psi.shape
     proj_v1_del = torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0))
-    pro_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), torch.matmul(w, w.transpose(1,0))))
+    proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), torch.matmul(w, w.transpose(1,0))))
     
     
 #     print(delta_psi)
