@@ -53,6 +53,7 @@ parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping cri
 parser.add_argument('--stop-crit-2', default=0.02, type=float, help='Stopping criterion 2')
 
 args = parser.parse_args()
+device = args.device
 
 # args = {}
 # args['depth'] = 90#6
