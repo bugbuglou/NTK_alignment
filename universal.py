@@ -42,7 +42,7 @@ parser.add_argument('--align-easy-diff', action='store_true', help='Compute alig
 # parser.add_argument('--layer-align-test', action='store_true', help='Compute alignment with each layer separately (test set)')
 parser.add_argument('--complexity', action='store_true', help='Compute trace(K) and norm(dw) in order to compute the complexity')
 
-# parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
+parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
 
 # parser.add_argument('--save-ntk-train', action='store_true', help='Save training set ntk')
 # parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
