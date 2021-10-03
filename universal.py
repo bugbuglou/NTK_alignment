@@ -1,4 +1,4 @@
-!pip install nngeometry
+# !pip install nngeometry
 import argparse
 # from tasks import get_task
 
