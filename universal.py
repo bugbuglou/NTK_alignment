@@ -35,7 +35,6 @@ parser.add_argument('--dir', default='./', type=str, help='Directory to save out
 parser.add_argument('--diff-type', default='random', type=str, help='Type of difficult examples',
                     choices=['random', 'other'])
 parser.add_argument('--device', default='cuda', type=str, help='device used', choices=['cuda', 'cpu'])
-parser.add_argument('--diff-type', default='random', type=str, help='Type of difficult examples')
 # parser.add_argument('--align-train', action='store_true', help='Compute alignment with train set')
 # parser.add_argument('--align-test', action='store_true', help='Compute alignment with test set')
 parser.add_argument('--align-easy-diff', action='store_true', help='Compute alignment with easy and difficult samples (requires diff > 0)')
