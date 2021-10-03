@@ -27,7 +27,7 @@ parser.add_argument('--task', required=True, type=str, help='Task',
                     choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
 parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
-
+parser.add_argument('--last', default=256, type=int, help='last layer width')
 # parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
 parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
 parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
