@@ -54,8 +54,8 @@ parser.add_argument('--stop-crit-2', default=0.02, type=float, help='Stopping cr
 
 args = parser.parse_args()
 device = args.device
-args.depth = 100
-print(args.depth)
+# args.depth = 100
+# print(args.depth)
 
 # args = {}
 # args['depth'] = 90#6
@@ -76,7 +76,7 @@ print(args.depth)
 # args['diff_type'] = 'random'
 # args['align_easy_diff'] = False
 # args['epochs'] = 300
-# args['no_centering'] = False
+args['no_centering'] = False
 # args['dir'] = '/content/drive/MyDrive/NTK_alignment_5' # user fill in
 # device = 'cuda'
 
