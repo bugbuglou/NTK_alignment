@@ -857,10 +857,10 @@ from tqdm import tqdm
 import concurrent.futures 
 # import multiprocessing
 import torch.multiprocessing as mp
-# model_des = ['cifar10_vgg11','cifar10_vgg13','cifar10_vgg16','cifar10_vgg19']
-model_des = ['cifar10_vgg19']
-# lrs = [0.01, 0.01, 0.007, 0.005] #0.003, 0.0005, 0.0002, 0.002, 0.001,
-lrs = [0.005]
+model_des = ['cifar10_vgg11','cifar10_vgg13','cifar10_vgg16','cifar10_vgg19']
+# model_des = ['cifar10_vgg19']
+lrs = [0.01, 0.01, 0.007, 0.005] #0.003, 0.0005, 0.0002, 0.002, 0.001,
+# lrs = [0.005]
 MC = 1
 _, dataloaders, criterion = get_task(args)
 dir = args['dir']
