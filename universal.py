@@ -803,14 +803,14 @@ def get_fmnist(args):
 def add_difficult_examples(dataloaders, args):
     # adds difficult examples and extract small
     # dataloaders
-    if args['diff_type'] == 'random':
+    if args.diff_type == 'random':
         trainset = dataloaders['train'].dataset
         x_easy = []
         y_easy = []
         x_diff = []
         y_diff = []
         for i in range(len(trainset.targets)):
-            if random.random() < args['diff']:
+            if random.random() < args.diff:
                 trainset.targets[i] = random.randint(0, 9)
                 x_diff.append(trainset[i][0])
                 y_diff.append(trainset.targets[i])
@@ -822,12 +822,12 @@ def add_difficult_examples(dataloaders, args):
         y_easy = torch.tensor(y_easy)
         x_diff = torch.stack(x_diff)
         y_diff = torch.tensor(y_diff)
-    elif args['diff_type'] == 'other' and args['task'][:5] == 'mnist':
+    elif args.diff_type == 'other' and args.task[:5] == 'mnist':
         trainset = dataloaders['train'].dataset
         trainset_kmnist = KMNIST(default_datapath, train=True, download=True,
                                  transform=trainset.transform)
         mnist_len = len(trainset)
-        kmnist_len = int(args['diff'] * mnist_len)
+        kmnist_len = int(args.diff * mnist_len)
         indices = np.arange(len(trainset_kmnist))
         np.random.shuffle(indices)
         indices = indices[:kmnist_len]
@@ -992,7 +992,7 @@ for i in range(len(lrs)):
         model_alt = VGG('VGG19', base=args.width)
     model_alt = model_alt.to(device)
     models.append(model_alt)
-    optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args['mom']))
+    optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
     result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lrs[i]) + ',' +task_dis)
     try:
         os.mkdir(result_dir)
