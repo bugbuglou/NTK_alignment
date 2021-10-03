@@ -57,7 +57,7 @@ device = args.device
 # args.depth = 100
 # print(args.depth)
 
-# args = {}
+Args = {}
 # args['depth'] = 90#6
 # # args['width'] = 256 #256
 # # args['last'] = 256
@@ -76,7 +76,7 @@ device = args.device
 # args['diff_type'] = 'random'
 # args['align_easy_diff'] = False
 # args['epochs'] = 300
-args['no_centering'] = False
+Args['no_centering'] = False
 # args['dir'] = '/content/drive/MyDrive/NTK_alignment_5' # user fill in
 # device = 'cuda'
 
@@ -1095,7 +1095,7 @@ def process(index, rank, lr, model, optimizer, loaders = dataloaders, args = arg
             
             log['layer_align_test_init'], _, _ = \
                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not args.no_centering)
+                                centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
@@ -1109,11 +1109,11 @@ def process(index, rank, lr, model, optimizer, loaders = dataloaders, args = arg
         if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
             log['layer_align_train_loss2'], _, _ = \
                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                    centering=not args.no_centering)
+                                    centering=not Args['no_centering'])
             
             log['layer_align_test_loss2'], _, _ = \
                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not args.no_centering)
+                                centering=not Args['no_centering'])
                 
             log['generalization_gap2'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration2'] = iterations
@@ -1124,11 +1124,11 @@ def process(index, rank, lr, model, optimizer, loaders = dataloaders, args = arg
         if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
             log['layer_align_train_loss3'], _, _ = \
                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                    centering=not args.no_centering)
+                                    centering=not Args['no_centering'])
             
             log['layer_align_test_loss3'], _, _ = \
                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not args.no_centering)
+                                centering=not Args['no_centering'])
                 
             log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration3'] = iterations
