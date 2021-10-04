@@ -1096,16 +1096,18 @@ for i in range(len(lrs)):
     if model_name == 'fcfree':
         args.depth = depths[i]
         model_alt, _, _= get_task(args)
-    elif model_name == 'vgg19':
-        model_alt = VGG('VGG19', base=args.width)
-    elif model_name == 'vgg11':
-        model_alt = VGG('VGG11', base=args.width)
-    elif model_name == 'vgg13':
-        model_alt = VGG('VGG13', base=args.width)
-    elif model_name == 'vgg16':
-        model_alt = VGG('VGG16', base=args.width)
-    elif model_name == 'resnet18':
-        model_alt = ResNet18()
+#     elif model_name == 'vgg19':
+#         model_alt = VGG('VGG19', base=args.width)
+#     elif model_name == 'vgg11':
+#         model_alt = VGG('VGG11', base=args.width)
+#     elif model_name == 'vgg13':
+#         model_alt = VGG('VGG13', base=args.width)
+#     elif model_name == 'vgg16':
+#         model_alt = VGG('VGG16', base=args.width)
+#     elif model_name == 'resnet18':
+#         model_alt = ResNet18()
+    else:
+        model_alt, _, _= get_task(args)
     model_alt = model_alt.to(device)
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
