@@ -41,7 +41,7 @@ args['diff_type'] = 'random'
 args['align_easy_diff'] = False
 args['epochs'] = 300
 args['no_centering'] = False
-args['dir'] = '' # user fill in
+args['dir'] = 'cifar10/' # user fill in
 device = 'cuda'
 
 
