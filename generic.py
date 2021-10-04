@@ -1213,13 +1213,13 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
         if epoch == 0:
-#             log['layer_align_train_init'], _, _ = \
-#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-#                                     centering=not args.no_centering)
+            log['layer_align_train_init'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not args.no_centering)
             
-#             log['layer_align_test_init'], _, _ = \
-#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-#                                 centering=not Args['no_centering'])
+            log['layer_align_test_init'], _, _ = \
+                layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             if model_name == 'fcfree':
