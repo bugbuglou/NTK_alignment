@@ -1208,6 +1208,10 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             loss2 = rae.get('train_loss')
             acc = rae.get('train_acc')
             print((loss2, acc))
+        if epoch == 1:
+            torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
+        if epoch == 2:
+            torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
         if epoch == 0:
 #             log['layer_align_train_init'], _, _ = \
 #                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
@@ -1239,21 +1243,22 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             
         
         if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
-#             log['layer_align_train_loss2'], _, _ = \
-#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-#                                     centering=not Args['no_centering'])
+            log['layer_align_train_loss2'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not Args['no_centering'])
             
-#             log['layer_align_test_loss2'], _, _ = \
-#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-#                                 centering=not Args['no_centering'])
+            log['layer_align_test_loss2'], _, _ = \
+                layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                centering=not Args['no_centering'])
                 
             log['generalization_gap2'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration2'] = iterations
             log['accuracy2'] = test(model, loaders['mini_test'])[0]
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
             print(log)
+            torch.save(model, os.path.join(result_dir, f'model_half_trained_{index}'))
             stop_2 = True
-            break
+
         if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
             log['layer_align_train_loss3'], _, _ = \
                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
