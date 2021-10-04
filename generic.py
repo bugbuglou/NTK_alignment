@@ -1067,7 +1067,7 @@ elif dataset_name == 'cifar10' and model_name == 'fcfree':
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif dataset_name == 'cifar100' and model_name == 'vgg19':
     depths = [0]
-    lrs = [0.005]
+    lrs = [0.002]
 elif dataset_name == 'cifar10' and model_name == 'vgg11':
     depths = [0]
     lrs = [0.01]
@@ -1205,6 +1205,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             loss1 = loss2
             loss2 = rae.get('train_loss')
             acc = rae.get('train_acc')
+            print((loss2, acc))
         if epoch == 0:
 #             log['layer_align_train_init'], _, _ = \
 #                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
