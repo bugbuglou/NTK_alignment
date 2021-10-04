@@ -1005,7 +1005,10 @@ for i in range(len(lrs)):
     model_alt = model_alt.to(device)
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
-    result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +model_name)
+    if model_name == 'fcfree':
+        result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +model_name)
+    else:
+        result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + model_name)
     try:
         os.mkdir(result_dir)
     except:
@@ -1072,7 +1075,7 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders, args = args, depths = depths):
+def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders, args = args, depths = depths, model_name = model_name):
     log, log1 = pd.Series(), pd.Series()
 #     result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lr) + ',' + task_dis)
     # for i in tqdm(range(MC)):
@@ -1108,7 +1111,16 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
                                 centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
-            model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
+            if model_name == 'fcfree':
+                model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
+            elif model_name == 'vgg19':
+                model_alt = VGG('VGG19', base=args.width)
+            elif model_name == 'vgg11':
+                model_alt = VGG('VGG11', base=args.width)
+            elif model_name == 'vgg13':
+                model_alt = VGG('VGG13', base=args.width)
+            elif model_name == 'vgg16':
+                model_alt = VGG('VGG16', base=args.width)
             model_prev.load_state_dict(model.state_dict())
             model_prev = model_prev.to(device)
             # log['iteration1'] = iterations
@@ -1175,4 +1187,4 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
 # models = []
 for j in range(MC):
     for i in tqdm(range(len(lrs))):
-        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i])
+        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name)
