@@ -1185,7 +1185,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             
 
 # models = []
-if model_name = 'fcfree':
+if model_name == 'fcfree':
     for j in range(MC):
         for i in tqdm(range(len(lrs))):
             process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name)
