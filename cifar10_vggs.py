@@ -874,12 +874,13 @@ for i in range(len(lrs)):
     model_alt = model_alt.to(device)
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args['mom']))
-    result_dir = os.path.join(dir, 'lr = ' + str(lrs[i]) + ',' +model_des[i])
+    result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + model_des[i])
     try:
         os.mkdir(result_dir)
     except:
         print('I will be overwriting a previous experiment')
     result_dirs.append(result_dir)
+print(result_dirs)
 
 class RunningAverageEstimator:
 
@@ -941,9 +942,10 @@ def cal_par_movement(model_prev, model):
         diffs.append(diff)
     return diffs
 
-def process(index, task_des, lr, model, optimizer, loaders = dataloaders, args = args, task_dis = task_dis):
+def process(index, task_des, lr, model, optimizer, result_dir, loaders = dataloaders, args = args):
     log, log1 = pd.Series(), pd.Series()
-    result_dir = os.path.join(dir, 'lr = ' + str(lr) + ',' + task_dis)
+    # result_dir = os.path.join(dir, 'lr = ' + str(lr) + ',' + task_dis)
+    print(result_dir)
     # for i in tqdm(range(MC)):
     # model, _, _ = get_task(args)
     # params = [param for name, param in model.named_parameters()]
@@ -1068,4 +1070,4 @@ def process(index, task_des, lr, model, optimizer, loaders = dataloaders, args =
 
 # models = []
 for i in tqdm(range(len(lrs))):
-    process(index = 1, task_des = model_des[i], lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, task_dis = task_dis)
+    process(index = 1, task_des = model_des[i], lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i])
