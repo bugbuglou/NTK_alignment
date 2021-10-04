@@ -459,7 +459,80 @@ class FC(nn.Module):
         # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
 
+class FC_cifar10(nn.Module):
+    def __init__(self, depth, width, last, bn=False, base=0):
+        super(FC_cifar10, self).__init__()
+        self.bn = bn 
+        base = base if base != 0 else 64
+        self.base = base
+        self.last = last
+        self.in_features = nn.Linear(32*32*3, width)
+        self.features = self._make_layers(depth-2, width)
+        self.out_features = nn.Linear(self.last, 10)
+        # self.classifier = nn.Linear(8 * base, 10)
 
+    def forward(self, x):
+        out = nn.Flatten()(x)
+        out = F.relu(self.in_features(out))
+        out = self.features(out)
+        out = self.out_features(out)
+        # out = out.view(out.size(0), -1)
+        # out = self.classifier(out)
+        return out
+
+    def _make_layers(self, depth, width):
+        layers = []
+        # in_channels = 3
+        for i in range(depth):
+            # if i==0:
+            #     layers += [nn.Flatten(), nn.Linear(28 * 28, width), nn.ReLU()]
+            # elif i<depth-1:
+            if i != depth -1:
+                layers += [nn.Linear(width, width), nn.ReLU()]
+            else:
+                layers += [nn.Linear(width, self.last), nn.ReLU()]
+            # else:
+                # layers += [nn.Linear(width, 10)]
+        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
+
+class FC_cifar100(nn.Module):
+    def __init__(self, depth, width, last, bn=False, base=0):
+        super(FC_cifar100, self).__init__()
+        self.bn = bn 
+        base = base if base != 0 else 64
+        self.base = base
+        self.last = last
+        self.in_features = nn.Linear(32*32*3, width)
+        self.features = self._make_layers(depth-2, width)
+        self.out_features = nn.Linear(self.last, 100)
+        # self.classifier = nn.Linear(8 * base, 10)
+
+    def forward(self, x):
+        out = nn.Flatten()(x)
+        out = F.relu(self.in_features(out))
+        out = self.features(out)
+        out = self.out_features(out)
+        # out = out.view(out.size(0), -1)
+        # out = self.classifier(out)
+        return out
+
+    def _make_layers(self, depth, width):
+        layers = []
+        # in_channels = 3
+        for i in range(depth):
+            # if i==0:
+            #     layers += [nn.Flatten(), nn.Linear(28 * 28, width), nn.ReLU()]
+            # elif i<depth-1:
+            if i != depth -1:
+                layers += [nn.Linear(width, width), nn.ReLU()]
+            else:
+                layers += [nn.Linear(width, self.last), nn.ReLU()]
+            # else:
+                # layers += [nn.Linear(width, 10)]
+        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
+      
 class VGG(nn.Module):
     def __init__(self, vgg_name, bn=False, base=0):
         super(VGG, self).__init__()
@@ -717,7 +790,7 @@ def get_cifar100(args):
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
     ])
 
     transform_test = transforms.Compose([
@@ -881,8 +954,8 @@ def get_task(args):
     task_name, model_name = args.task.split('_')
 
     if task_name == 'cifar10':
-        if args.depth != 0:
-            raise NotImplementedError
+#         if args.depth != 0:
+#             raise NotImplementedError
         dataloaders['train'], dataloaders['test'] = get_cifar10(args)
         if model_name == 'vgg19':
             model = VGG('VGG19', base=args.width)
@@ -896,24 +969,28 @@ def get_task(args):
             model = ResNet18()
             if args.width != 0:
                 raise NotImplementedError
+        elif model_name == 'fcfree':
+            model = FC_cifar10(depth = args.depth, width = args.width, last = args.last)
                 
     if task_name == 'cifar100':
-        if args.depth != 0:
-            raise NotImplementedError
+#         if args.depth != 0:
+#             raise NotImplementedError
         dataloaders['train'], dataloaders['test'] = get_cifar10(args)
         if model_name == 'vgg19':
-            model = VGG('VGG19', base=args.width)
+            model = VGG100('VGG19', base=args.width)
         if model_name == 'vgg11':
-            model = VGG('VGG11', base=args.width)
+            model = VGG100('VGG11', base=args.width)
         if model_name == 'vgg13':
-            model = VGG('VGG13', base=args.width)
+            model = VGG100('VGG13', base=args.width)
         if model_name == 'vgg16':
-            model = VGG('VGG16', base=args.width)
+            model = VGG100('VGG16', base=args.width)
         elif model_name == 'resnet18':
-            model = ResNet18()
+            model = ResNet18(num_classes=100)
             if args.width != 0:
                 raise NotImplementedError
-                
+        elif model_name == 'fcfree':
+            model = FC_cifar100(depth = args.depth, width = args.width, last = args.last)
+            
     elif task_name == 'mnist':
         dataloaders['train'], dataloaders['test'] = get_mnist(args)
         if model_name == 'fc':
@@ -1033,9 +1110,9 @@ for i in range(len(lrs)):
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
     if model_name == 'fcfree':
-        result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +model_name)
+        result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
     else:
-        result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + model_name)
+        result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + args.task)
     try:
         os.mkdir(result_dir)
     except:
@@ -1129,13 +1206,13 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             loss2 = rae.get('train_loss')
             acc = rae.get('train_acc')
         if epoch == 0:
-            log['layer_align_train_init'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                    centering=not args.no_centering)
+#             log['layer_align_train_init'], _, _ = \
+#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
+#                                     centering=not args.no_centering)
             
-            log['layer_align_test_init'], _, _ = \
-                layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not Args['no_centering'])
+#             log['layer_align_test_init'], _, _ = \
+#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
+#                                 centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             if model_name == 'fcfree':
@@ -1155,16 +1232,17 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             # log['iteration1'] = iterations
             # log['accuracy1'] = test(model, loaders['mini_test'])[0]
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+#             break
             
         
         if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
-            log['layer_align_train_loss2'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                    centering=not Args['no_centering'])
+#             log['layer_align_train_loss2'], _, _ = \
+#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
+#                                     centering=not Args['no_centering'])
             
-            log['layer_align_test_loss2'], _, _ = \
-                layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not Args['no_centering'])
+#             log['layer_align_test_loss2'], _, _ = \
+#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
+#                                 centering=not Args['no_centering'])
                 
             log['generalization_gap2'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration2'] = iterations
@@ -1172,6 +1250,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
             print(log)
             stop_2 = True
+            break
         if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
             log['layer_align_train_loss3'], _, _ = \
                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
