@@ -28,7 +28,8 @@ parser.add_argument('--task', required=True, type=str, help='Task',
 parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
 parser.add_argument('--last', default=256, type=int, help='last layer width')
-# parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
+parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
+parser.add_argument('--bn', default=True, type=bool, help='whether to use BN')
 parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
 parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
 parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
@@ -966,7 +967,7 @@ def get_task(args):
         if model_name == 'vgg16':
             model = VGG('VGG16', base=args.width)
         elif model_name == 'resnet18':
-            model = ResNet18()
+            model = ResNet18(bn = args.bn)
             if args.width != 0:
                 raise NotImplementedError
         elif model_name == 'fcfree':
@@ -985,7 +986,7 @@ def get_task(args):
         if model_name == 'vgg16':
             model = VGG100('VGG16', base=args.width)
         elif model_name == 'resnet18':
-            model = ResNet18(num_classes=100)
+            model = ResNet18(num_classes=100, bn = args.bn)
             if args.width != 0:
                 raise NotImplementedError
         elif model_name == 'fcfree':
@@ -1013,7 +1014,7 @@ def get_task(args):
         elif model_name == 'fcfree':
             model = FC(depth = args.depth, width = args.width, last = args.last)
         elif model_name == 'resnet':
-            model = ResNet18()
+            model = ResNet18(bn = args.bn)
             if args.width != 0:
                 raise NotImplementedError
         else:
@@ -1233,7 +1234,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             elif model_name == 'vgg16':
                 model_prev = VGG('VGG16', base=args.width)
             elif model_name == 'resnet18':
-                model_prev = ResNet18()
+                model_prev = ResNet18(bn = args.bn)
             model_prev.load_state_dict(model.state_dict())
             model_prev = model_prev.to(device)
             # log['iteration1'] = iterations
