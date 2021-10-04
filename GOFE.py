@@ -31,7 +31,7 @@ args = {}
 args['depth'] = 5#6
 args['width'] = 32 #256
 args['last'] = 32
-args['num_eigenthings'] = 50
+args['num_eigenthings'] = 1
 args['task'] = 'mnist_fcfree' #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
 # args[align_train] = True
@@ -1241,7 +1241,38 @@ def get_task(args):
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
 
     return model, dataloaders, criterion
-  
+
+def gram_schmidt(U, v):
+    #make v orthogonal to all column vectors in U
+    v = v/(torch.norm(v))
+    s = torch.matmul(U, torch.matmul(U.transpose(1,0), v))
+    v = v - s
+    print(torch.matmul(U.transpose(1,0), v))
+    v = v/(torch.norm(v))
+    return v
+
+def gen_rand(y, num):
+    y = y/(torch.norm(y))
+    U = torch.FloatTensor(np.asarray(y).copy())
+    for i in range(num):
+        v = torch.randn_like(y)
+        v = gram_schmidt(U, v)
+        U = torch.cat([U, v], dim = 1)
+    return U
+
+def orth_evo(U, model, output_fn, loader, n_output = 10, device = device, centering = True):
+    lc = LayerCollection.from_model(model)
+    generator = Jacobian(layer_collection=lc,
+                         model=model,
+                         loader=loader,
+                         function=output_fn,
+                         n_output=n_output,
+                         centering=centering)
+    K_dense = FMatDense(generator)
+    sd = K_dense.data.size()
+    T = torch.matmul(K_dense.data.view(sd[0]*sd[1], sd[2]*sd[3]), U)
+    return torch.matmul(T.transpose(1,0), T)
+
 # model1, dataloaders, criterion = get_task(args)
 model1, dataloaders, criterion = get_task(args)
 dir = args['dir']
@@ -1297,7 +1328,7 @@ def stopping_criterion(log):
 
 def do_compute_ntk(iterations):
     # return iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
-    return iterations == 0 or iterations in (1 * len(dataloaders['micro_train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
+    return iterations == 0 or iterations in (1 * len(dataloaders['train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
 
 
 def test(model, loader):
@@ -1352,6 +1383,8 @@ def process(index):
     columns.append('corr_ofe_test_layer')
     columns.append('corr_gofe_train_eig1')
     columns.append('corr_gofe_test_eig1')
+    columns.append('orth_evo')
+    columns.append('orth_evo_test')
     log=pd.DataFrame(columns=columns)
     model = models[index]
     optimizer = optimizers[index]
@@ -1403,7 +1436,7 @@ def process(index):
             torch.save(model, os.path.join(result_dirs[index],'model.pkl'))
             print('stopping now')
             break
-        for batch_idx, (inputs, targets) in enumerate(dataloaders['micro_train']):
+        for batch_idx, (inputs, targets) in enumerate(dataloaders['train']):
             inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -1430,10 +1463,16 @@ def process(index):
                 
                 to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], tar_test = compute_hessian(model, dataloaders['micro_test'],
                                                                   args['num_eigenthings'], cal_target = True)
+                if iterations == 0:
+                    U = gen_rand(tar, num = 10) # initialise some random orthogonal vectors
+                    print(torch.matmul(U.transpose(1,0), U))
+                    U_test = gen_rand(tar_test, num = 10)
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
                 if iterations > 0:
-                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
-                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
+                      to_log['orth_evo'] = orth_evo(U, model, output_fn, dataloaders['micro_train'], n_output = 10, device = device, centering = True)
+                      to_log['orth_evo_test'] = orth_evo(U_test, model, output_fn, dataloaders['micro_test'], n_output = 10, device = device, centering = True)
+#                     gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
+#                     gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
 #                     to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_train_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
