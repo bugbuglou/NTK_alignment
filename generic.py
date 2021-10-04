@@ -1067,7 +1067,7 @@ elif dataset_name == 'cifar10' and model_name == 'fcfree':
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif dataset_name == 'cifar100' and model_name == 'vgg19':
     depths = [0]
-    lrs = [0.002]
+    lrs = [0.005]
 elif dataset_name == 'cifar10' and model_name == 'vgg11':
     depths = [0]
     lrs = [0.01]
