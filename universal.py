@@ -24,7 +24,7 @@ import torch.optim as optim
 parser = argparse.ArgumentParser(description='Compute NTK alignment for models with optimal lr schedule')
 
 parser.add_argument('--task', required=True, type=str, help='Task',
-                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
+                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
 parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
 parser.add_argument('--last', default=256, type=int, help='last layer width')
@@ -975,11 +975,15 @@ elif dataset_name == 'fmnist':
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif dataset_name == 'cifar10' and model_name == 'vgg19':
     lrs = [0.005]
+elif dataset_name == 'cifar10' and model_name == 'fcfree':
+    lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif dataset_name == 'cifar100' and model_name == 'vgg19':
     lrs = [0.005]
+elif dataset_name == 'cifar100' and model_name == 'fcfree':
+    lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
     
     
-MC = 5  #specify how many models to average over
+MC = 1  #specify how many models to average over
 _, dataloaders, criterion = get_task(args)
 dir = args.dir
 task_dis = dataset_name + '_' + str(args.width)
@@ -987,15 +991,21 @@ task_dis = dataset_name + '_' + str(args.width)
 models, optimizers,result_dirs = [], [], []
 
 for i in range(len(lrs)):
-    if dataset_name in ['mnist', 'fmnist']:
+    if model_name == 'fcfree':
         args.depth = depths[i]
         model_alt, _, _= get_task(args)
     elif model_name == 'vgg19':
         model_alt = VGG('VGG19', base=args.width)
+    elif model_name == 'vgg11':
+        model_alt = VGG('VGG11', base=args.width)
+    elif model_name == 'vgg13':
+        model_alt = VGG('VGG13', base=args.width)
+    elif model_name == 'vgg16':
+        model_alt = VGG('VGG16', base=args.width)
     model_alt = model_alt.to(device)
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
-    result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lrs[i]) + ',' +task_dis)
+    result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +model_name)
     try:
         os.mkdir(result_dir)
     except:
@@ -1062,9 +1072,9 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, loaders = dataloaders, args = args, task_dis = task_dis, depths = depths):
+def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders, args = args, depths = depths):
     log, log1 = pd.Series(), pd.Series()
-    result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lr) + ',' + task_dis)
+#     result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lr) + ',' + task_dis)
     # for i in tqdm(range(MC)):
     # model, _, _ = get_task(args)
     # params = [param for name, param in model.named_parameters()]
@@ -1165,4 +1175,4 @@ def process(index, rank, lr, model, optimizer, loaders = dataloaders, args = arg
 # models = []
 for j in range(MC):
     for i in tqdm(range(len(lrs))):
-        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, task_dis = task_dis)
+        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i])
