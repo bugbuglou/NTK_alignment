@@ -974,12 +974,34 @@ elif dataset_name == 'fmnist':
     depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif dataset_name == 'cifar10' and model_name == 'vgg19':
+    depths = [0]
     lrs = [0.005]
+elif dataset_name == 'cifar10' and model_name == 'vgg11':
+    depths = [0]
+    lrs = [0.01]
+elif dataset_name == 'cifar10' and model_name == 'vgg13':
+    depths = [0]
+    lrs = [0.01]
+elif dataset_name == 'cifar10' and model_name == 'vgg16':
+    depths = [0]
+    lrs = [0.007]
 elif dataset_name == 'cifar10' and model_name == 'fcfree':
+    depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif dataset_name == 'cifar100' and model_name == 'vgg19':
+    depths = [0]
     lrs = [0.005]
+elif dataset_name == 'cifar10' and model_name == 'vgg11':
+    depths = [0]
+    lrs = [0.01]
+elif dataset_name == 'cifar10' and model_name == 'vgg13':
+    depths = [0]
+    lrs = [0.01]
+elif dataset_name == 'cifar10' and model_name == 'vgg16':
+    depths = [0]
+    lrs = [0.007]
 elif dataset_name == 'cifar100' and model_name == 'fcfree':
+    depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
     
     
@@ -1185,11 +1207,11 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             
 
 # models = []
-if model_name == 'fcfree':
-    for j in range(MC):
-        for i in tqdm(range(len(lrs))):
-            process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name)
-else:
-    for j in range(MC):
-          for i in tqdm(range(len(lrs))):
-              process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, depths = None)
+# if model_name == 'fcfree':
+for j in range(MC):
+    for i in tqdm(range(len(lrs))):
+        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name)
+# else:
+#     for j in range(MC):
+#           for i in tqdm(range(len(lrs))):
+#               process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, depths = None)
