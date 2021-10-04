@@ -1003,6 +1003,9 @@ elif dataset_name == 'cifar10' and model_name == 'vgg16':
 elif dataset_name == 'cifar100' and model_name == 'fcfree':
     depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
+elif model_name == 'resnet18':
+    depths = [0]
+    lrs = [0.1]
     
     
 MC = 1  #specify how many models to average over
@@ -1024,6 +1027,8 @@ for i in range(len(lrs)):
         model_alt = VGG('VGG13', base=args.width)
     elif model_name == 'vgg16':
         model_alt = VGG('VGG16', base=args.width)
+    elif model_name == 'resnet18':
+        model_alt = ResNet18()
     model_alt = model_alt.to(device)
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
@@ -1136,13 +1141,15 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             if model_name == 'fcfree':
                 model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
             elif model_name == 'vgg19':
-                model_alt = VGG('VGG19', base=args.width)
+                model_prev = VGG('VGG19', base=args.width)
             elif model_name == 'vgg11':
-                model_alt = VGG('VGG11', base=args.width)
+                model_prev = VGG('VGG11', base=args.width)
             elif model_name == 'vgg13':
-                model_alt = VGG('VGG13', base=args.width)
+                model_prev = VGG('VGG13', base=args.width)
             elif model_name == 'vgg16':
-                model_alt = VGG('VGG16', base=args.width)
+                model_prev = VGG('VGG16', base=args.width)
+            elif model_name == 'resnet18':
+                model_prev = ResNet18()
             model_prev.load_state_dict(model.state_dict())
             model_prev = model_prev.to(device)
             # log['iteration1'] = iterations
