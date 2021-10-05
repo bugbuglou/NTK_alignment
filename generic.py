@@ -1113,7 +1113,8 @@ for i in range(len(lrs)):
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
     for name, parms in models[i].named_parameters():
-        print(name)
+        if param.requires_grad:
+            print(name)
     if model_name == 'fcfree':
         result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
     else:
