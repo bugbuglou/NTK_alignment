@@ -1084,7 +1084,7 @@ elif dataset_name == 'cifar100' and model_name == 'fcfree':
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif model_name == 'resnet18':
     depths = [0]
-    lrs = [0.1]
+    lrs = [0.01]
     
     
 MC = 1  #specify how many models to average over
@@ -1215,12 +1215,12 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             print((loss2, acc))
         if epoch == 1:
             torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
-            for name, params in model.named_parameters():
-                if name == 'layer1.0.bn1.weight':
-                    print(params.data)
-            for name, params in model_prev.named_parameters():
-                if name == 'layer1.0.bn1.weight':
-                    print(params.data)
+#             for name, params in model.named_parameters():
+#                 if name == 'layer1.0.bn1.weight':
+#                     print(params.data)
+#             for name, params in model_prev.named_parameters():
+#                 if name == 'layer1.0.bn1.weight':
+#                     print(params.data)
             
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
