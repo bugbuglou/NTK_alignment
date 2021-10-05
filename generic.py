@@ -78,6 +78,7 @@ Args = {}
 # args['align_easy_diff'] = False
 # args['epochs'] = 300
 Args['no_centering'] = False
+print(args.bn)
 # args['dir'] = '/content/drive/MyDrive/NTK_alignment_5' # user fill in
 # device = 'cuda'
 
