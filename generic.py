@@ -1112,9 +1112,9 @@ for i in range(len(lrs)):
     model_alt = model_alt.to(device)
     models.append(model_alt)
     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
-    for name, params in models[i].named_parameters():
-        if params.requires_grad:
-            print(name)
+#     for name, params in models[i].named_parameters():
+#         if params.requires_grad:
+#             print(name)
     if model_name == 'fcfree':
         result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
     else:
@@ -1214,6 +1214,13 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             print((loss2, acc))
         if epoch == 1:
             torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
+            for name, params in model.named_parameters():
+                if name == 'layer1.0.bn1.weight':
+                    print(params.data)
+            for name, params in model_prev.named_parameters():
+                if name == 'layer1.0.bn1.weight':
+                    print(params.data)
+            
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
         if epoch == 0:
