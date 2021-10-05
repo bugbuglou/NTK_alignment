@@ -29,7 +29,7 @@ parser.add_argument('--depth', default=0, type=int, help='network depth (only wo
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
 parser.add_argument('--last', default=256, type=int, help='last layer width')
 parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
-parser.add_argument('--bn', default=True, type=bool, help='whether to use BN')
+# parser.add_argument('--bn', default=True, type=bool, help='whether to use BN')
 parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
 parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
 parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
@@ -42,7 +42,7 @@ parser.add_argument('--align-easy-diff', action='store_true', help='Compute alig
 # parser.add_argument('--layer-align-train', action='store_true', help='Compute alignment with each layer separately (train set)')
 # parser.add_argument('--layer-align-test', action='store_true', help='Compute alignment with each layer separately (test set)')
 parser.add_argument('--complexity', action='store_true', help='Compute trace(K) and norm(dw) in order to compute the complexity')
-
+parser.add_argument('--bn', action='store_false', help='Disable bn for resnets')
 parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
 
 # parser.add_argument('--save-ntk-train', action='store_true', help='Save training set ntk')
