@@ -32,6 +32,7 @@ parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
 # parser.add_argument('--bn', default=True, type=bool, help='whether to use BN')
 parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
 parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
+parser.add_argument('--bs', default=200, type=int, help='batch size for calculating alignment')
 parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
 parser.add_argument('--diff-type', default='random', type=str, help='Type of difficult examples',
                     choices=['random', 'other'])
@@ -1031,9 +1032,9 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args.align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 200, 200)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], args.bs, args.bs)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
-    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 200, 200)
+    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], args.bs, args.bs)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
 
     return model, dataloaders, criterion
