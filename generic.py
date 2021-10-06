@@ -1229,6 +1229,32 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
+        if epoch == args.epochs -1:
+            if dataset_name == 'cifar100':
+                log['layer_align_train_loss3'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
+                                        centering=not Args['no_centering'])
+
+                log['layer_align_test_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
+                                    centering=not Args['no_centering'])
+            else:
+                log['layer_align_train_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not Args['no_centering'])
+            
+                log['layer_align_test_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                    centering=not Args['no_centering'])
+                
+            log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
+            log['iteration3'] = iterations
+            log['accuracy3'] = test(model, loaders['mini_test'])[0]
+            torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
+            torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
+            log['movement'] = cal_par_movement(model_prev, model)
+            log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+            break
         if epoch == 0:
             if dataset_name == 'cifar100':
                 log['layer_align_train_init'], _, _ = \
