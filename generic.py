@@ -968,7 +968,7 @@ def get_task(args):
         if model_name == 'vgg16':
             model = VGG('VGG16', base=args.width)
         elif model_name == 'resnet18':
-            model = ResNet18(bn = args.bn)
+            model = ResNet18(num_classes = 10, bn = args.bn)
             if args.width != 0:
                 raise NotImplementedError
         elif model_name == 'fcfree':
@@ -1267,7 +1267,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             elif model_name == 'vgg16':
                 model_prev = VGG('VGG16', base=args.width)
             elif model_name == 'resnet18':
-                model_prev = ResNet18(bn = args.bn)
+                model_prev = ResNet18(num_classes = 10, bn = args.bn)
             model_prev.load_state_dict(model.state_dict())
             model_prev = model_prev.to(device)
             # log['iteration1'] = iterations
