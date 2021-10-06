@@ -1225,13 +1225,22 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
         if epoch == 0:
-            log['layer_align_train_init'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                    centering=not args.no_centering)
-            
-            log['layer_align_test_init'], _, _ = \
-                layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not Args['no_centering'])
+            if dataset_name == 'cifar100':
+                log['layer_align_train_init'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
+                                        centering=not args.no_centering)
+
+                log['layer_align_test_init'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
+                                    centering=not Args['no_centering'])
+            else:
+                log['layer_align_train_init'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                        centering=not args.no_centering)
+
+                log['layer_align_test_init'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                    centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             if dataset_name == 'cifar100':
@@ -1268,13 +1277,22 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             
         
         if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
-            log['layer_align_train_loss2'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+            if dataset_name == 'cifar100':
+                log['layer_align_train_loss2'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
+                                        centering=not Args['no_centering'])
+
+                log['layer_align_test_loss2'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
                                     centering=not Args['no_centering'])
-            
-            log['layer_align_test_loss2'], _, _ = \
-                layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not Args['no_centering'])
+            else:
+                log['layer_align_train_loss2'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                        centering=not Args['no_centering'])
+
+                log['layer_align_test_loss2'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                    centering=not Args['no_centering'])
                 
             log['generalization_gap2'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration2'] = iterations
@@ -1285,13 +1303,22 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             stop_2 = True
 
         if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
-            log['layer_align_train_loss3'], _, _ = \
+            if dataset_name == 'cifar100':
+                log['layer_align_train_loss3'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
+                                        centering=not Args['no_centering'])
+
+                log['layer_align_test_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
+                                    centering=not Args['no_centering'])
+            else:
+                log['layer_align_train_loss3'], _, _ = \
                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
                                     centering=not Args['no_centering'])
             
-            log['layer_align_test_loss3'], _, _ = \
-                layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                centering=not Args['no_centering'])
+                log['layer_align_test_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                    centering=not Args['no_centering'])
                 
             log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration3'] = iterations
@@ -1329,7 +1356,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
 # if model_name == 'fcfree':
 for j in range(MC):
     for i in tqdm(range(len(lrs))):
-        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name)
+        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
 # else:
 #     for j in range(MC):
 #           for i in tqdm(range(len(lrs))):
