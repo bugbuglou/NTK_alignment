@@ -1186,7 +1186,7 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders, args = args, depths = depths, model_name = model_name):
+def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders, args = args, depths = depths, model_name = model_name, dataset_name = dataset_name):
     log, log1 = pd.Series(), pd.Series()
 #     result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lr) + ',' + task_dis)
     # for i in tqdm(range(MC)):
@@ -1234,7 +1234,20 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
 #                                 centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
-            if model_name == 'fcfree':
+            if dataset_name == 'cifar100':
+                if model_name == 'fcfree':
+                    model_prev = FC_cifar100(depth = depths[rank], width = args.width, last = args.last)
+                elif model_name == 'vgg19':
+                    model_prev = VGG100('VGG19', base=args.width)
+                elif model_name == 'vgg11':
+                    model_prev = VGG100('VGG11', base=args.width)
+                elif model_name == 'vgg13':
+                    model_prev = VGG100('VGG13', base=args.width)
+                elif model_name == 'vgg16':
+                    model_prev = VGG100('VGG16', base=args.width)
+                elif model_name == 'resnet18':
+                    model_prev = ResNet18(num_classes = 100, bn = args.bn)
+            elif model_name == 'fcfree':
                 model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
             elif model_name == 'vgg19':
                 model_prev = VGG('VGG19', base=args.width)
