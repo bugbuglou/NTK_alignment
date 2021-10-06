@@ -133,8 +133,9 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
     targets = torch.cat([args[1] for args in iter(loader)])
     targets = one_hot(targets).float()
     targets -= targets.mean(dim=0)
-    print(targets.get_flat_representation().view(-1).shape)
+    
     targets = FVector(vector_repr=targets.t().contiguous())
+    print(targets.get_flat_representation().view(-1).shape)
 
     for l in lc.layers.items():
         # print(l)
