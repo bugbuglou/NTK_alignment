@@ -1084,7 +1084,7 @@ elif dataset_name == 'cifar100' and model_name == 'fcfree':
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif model_name == 'resnet18':
     depths = [0]
-    lrs = [0.01]
+    lrs = [0.05]
     
     
 MC = 1  #specify how many models to average over
