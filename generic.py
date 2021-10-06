@@ -165,7 +165,7 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
         # S = S/()
         # print(torch.norm(targets.get_flat_representation())**2)
         align = yTKy / (frobK * torch.norm(targets.get_flat_representation())**2)
-        
+        print(align.item())
         alignments.append(align.item())
       
         nums.append(frobK.data)
