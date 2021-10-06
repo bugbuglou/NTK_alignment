@@ -34,6 +34,8 @@ parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
 parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
 parser.add_argument('--bs', default=200, type=int, help='batch size for calculating alignment')
 parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
+parser.add_argument('--index', default=1, type=int, help='index the experiments')
+parser.add_argument('--MC', default=1, type=int, help='average over numebr of models')
 parser.add_argument('--diff-type', default='random', type=str, help='Type of difficult examples',
                     choices=['random', 'other'])
 parser.add_argument('--device', default='cuda', type=str, help='device used', choices=['cuda', 'cpu'])
@@ -1090,7 +1092,7 @@ elif model_name == 'resnet18':
     lrs = [0.1]
     
     
-MC = 1  #specify how many models to average over
+MC = args.MC #specify how many models to average over
 _, dataloaders, criterion = get_task(args)
 dir = args.dir
 task_dis = dataset_name + '_' + str(args.width)
@@ -1391,7 +1393,7 @@ for j in range(MC):
             print('I will be overwriting a previous experiment')
         result_dirs.append(result_dir)
     for i in tqdm(range(len(lrs))):
-        process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
+        process(index = j+args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
 # else:
 #     for j in range(MC):
 #           for i in tqdm(range(len(lrs))):
