@@ -1095,39 +1095,39 @@ _, dataloaders, criterion = get_task(args)
 dir = args.dir
 task_dis = dataset_name + '_' + str(args.width)
 # torch.save(model1, args.dir +'/' +task_dis+'_vgg19')
-models, optimizers,result_dirs = [], [], []
+# models, optimizers,result_dirs = [], [], []
 
-for i in range(len(lrs)):
-    if model_name == 'fcfree':
-        args.depth = depths[i]
-        model_alt, _, _= get_task(args)
-#     elif model_name == 'vgg19':
-#         model_alt = VGG('VGG19', base=args.width)
-#     elif model_name == 'vgg11':
-#         model_alt = VGG('VGG11', base=args.width)
-#     elif model_name == 'vgg13':
-#         model_alt = VGG('VGG13', base=args.width)
-#     elif model_name == 'vgg16':
-#         model_alt = VGG('VGG16', base=args.width)
-#     elif model_name == 'resnet18':
-#         model_alt = ResNet18()
-    else:
-        model_alt, _, _= get_task(args)
-    model_alt = model_alt.to(device)
-    models.append(model_alt)
-    optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
-#     for name, params in models[i].named_parameters():
-#         if params.requires_grad:
-#             print(name)
-    if model_name == 'fcfree':
-        result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
-    else:
-        result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + args.task)
-    try:
-        os.mkdir(result_dir)
-    except:
-        print('I will be overwriting a previous experiment')
-    result_dirs.append(result_dir)
+# for i in range(len(lrs)):
+#     if model_name == 'fcfree':
+#         args.depth = depths[i]
+#         model_alt, _, _= get_task(args)
+# #     elif model_name == 'vgg19':
+# #         model_alt = VGG('VGG19', base=args.width)
+# #     elif model_name == 'vgg11':
+# #         model_alt = VGG('VGG11', base=args.width)
+# #     elif model_name == 'vgg13':
+# #         model_alt = VGG('VGG13', base=args.width)
+# #     elif model_name == 'vgg16':
+# #         model_alt = VGG('VGG16', base=args.width)
+# #     elif model_name == 'resnet18':
+# #         model_alt = ResNet18()
+#     else:
+#         model_alt, _, _= get_task(args)
+#     model_alt = model_alt.to(device)
+#     models.append(model_alt)
+#     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
+# #     for name, params in models[i].named_parameters():
+# #         if params.requires_grad:
+# #             print(name)
+#     if model_name == 'fcfree':
+#         result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
+#     else:
+#         result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + args.task)
+#     try:
+#         os.mkdir(result_dir)
+#     except:
+#         print('I will be overwriting a previous experiment')
+#     result_dirs.append(result_dir)
 
 class RunningAverageEstimator:
 
@@ -1358,6 +1358,38 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
 # models = []
 # if model_name == 'fcfree':
 for j in range(MC):
+    models, optimizers,result_dirs = [], [], []
+    for i in range(len(lrs)):
+        if model_name == 'fcfree':
+            args.depth = depths[i]
+            model_alt, _, _= get_task(args)
+    #     elif model_name == 'vgg19':
+    #         model_alt = VGG('VGG19', base=args.width)
+    #     elif model_name == 'vgg11':
+    #         model_alt = VGG('VGG11', base=args.width)
+    #     elif model_name == 'vgg13':
+    #         model_alt = VGG('VGG13', base=args.width)
+    #     elif model_name == 'vgg16':
+    #         model_alt = VGG('VGG16', base=args.width)
+    #     elif model_name == 'resnet18':
+    #         model_alt = ResNet18()
+        else:
+            model_alt, _, _= get_task(args)
+        model_alt = model_alt.to(device)
+        models.append(model_alt)
+        optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
+    #     for name, params in models[i].named_parameters():
+    #         if params.requires_grad:
+    #             print(name)
+        if model_name == 'fcfree':
+            result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
+        else:
+            result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + args.task)
+        try:
+            os.mkdir(result_dir)
+        except:
+            print('I will be overwriting a previous experiment')
+        result_dirs.append(result_dir)
     for i in tqdm(range(len(lrs))):
         process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
 # else:
