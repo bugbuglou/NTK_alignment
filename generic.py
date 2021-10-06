@@ -111,7 +111,7 @@ def alignment(model, output_fn, loader, n_output, centering=True):
                          n_output=n_output,
                          centering=centering)
     targets = torch.cat([args[1] for args in iter(loader)])
-    targets = one_hot(targets).float()
+    targets = one_hot(targets, num_classes=n_output).float()
     targets -= targets.mean(dim=0)
     targets = FVector(vector_repr=targets.t().contiguous())
 
@@ -131,7 +131,7 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
     nums = []
     Ss = []
     targets = torch.cat([args[1] for args in iter(loader)])
-    targets = one_hot(targets).float()
+    targets = one_hot(targets, num_classes=n_output).float()
     targets -= targets.mean(dim=0)
     
     targets = FVector(vector_repr=targets.t().contiguous())
@@ -276,7 +276,7 @@ def SIM(model, loader):
     # model.eval()
     datas = []
     target = torch.cat([args[1] for args in iter(loader)])
-    target = one_hot(target).float()
+    target = one_hot(target, num_classes=n_output).float()
     # target -= target.mean(dim=0)
     for d, t in iter(loader):
         datas.append(d.to(device))
@@ -301,7 +301,7 @@ def two_terms_layer(model, output_fn, loader, n_output, centering=True):
     datas = []
     target = torch.cat([args[1] for args in iter(loader)])
     # tar = target
-    target = one_hot(target).float()
+    target = one_hot(target, num_classes=n_output).float()
     # tar1 = target
     # target -= target.mean(dim=0)
     for d, t in iter(loader):
