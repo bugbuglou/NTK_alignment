@@ -1287,6 +1287,8 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
                     model_prev = VGG100('VGG16', base=args.width)
                 elif model_name == 'resnet18':
                     model_prev = ResNet18(num_classes = 100, bn = args.bn)
+            if dataset_name == 'cifar10' and model_name == 'fcfree':
+                model_prev = FC_cifar10(depth = depths[rank], width = args.width, last = args.last)
             elif model_name == 'fcfree':
                 model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
             elif model_name == 'vgg19':
