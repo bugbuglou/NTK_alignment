@@ -1084,7 +1084,7 @@ elif dataset_name == 'cifar100' and model_name == 'fcfree':
     lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif model_name == 'resnet18':
     depths = [0]
-    lrs = [0.05]
+    lrs = [0.1]
     
     
 MC = 1  #specify how many models to average over
@@ -1225,13 +1225,13 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
         if epoch == 0:
-#             log['layer_align_train_init'], _, _ = \
-#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-#                                     centering=not args.no_centering)
+            log['layer_align_train_init'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not args.no_centering)
             
-#             log['layer_align_test_init'], _, _ = \
-#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-#                                 centering=not Args['no_centering'])
+            log['layer_align_test_init'], _, _ = \
+                layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             if model_name == 'fcfree':
@@ -1255,13 +1255,13 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             
         
         if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
-#             log['layer_align_train_loss2'], _, _ = \
-#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-#                                     centering=not Args['no_centering'])
+            log['layer_align_train_loss2'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not Args['no_centering'])
             
-#             log['layer_align_test_loss2'], _, _ = \
-#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-#                                 centering=not Args['no_centering'])
+            log['layer_align_test_loss2'], _, _ = \
+                layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                centering=not Args['no_centering'])
                 
             log['generalization_gap2'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration2'] = iterations
@@ -1272,13 +1272,13 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             stop_2 = True
 
         if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
-#             log['layer_align_train_loss3'], _, _ = \
-#                     layer_alignment(model, output_fn, loaders['micro_train'], 10,
-#                                     centering=not Args['no_centering'])
+            log['layer_align_train_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not Args['no_centering'])
             
-#             log['layer_align_test_loss3'], _, _ = \
-#                 layer_alignment(model, output_fn, loaders['micro_test'], 10,
-#                                 centering=not Args['no_centering'])
+            log['layer_align_test_loss3'], _, _ = \
+                layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                centering=not Args['no_centering'])
                 
             log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             log['iteration3'] = iterations
