@@ -982,7 +982,7 @@ def get_task(args):
     if task_name == 'cifar100':
 #         if args.depth != 0:
 #             raise NotImplementedError
-        dataloaders['train'], dataloaders['test'] = get_cifar10(args)
+        dataloaders['train'], dataloaders['test'] = get_cifar100(args)
         if model_name == 'vgg19':
             model = VGG100('VGG19', base=args.width)
         if model_name == 'vgg11':
