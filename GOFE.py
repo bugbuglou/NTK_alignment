@@ -1287,7 +1287,7 @@ def gram_schmidt(U, v, device = device):
     v = v/(torch.norm(v))
     s = torch.matmul(U, torch.matmul(U.transpose(1,0), v))
     v = v - s
-    print(torch.matmul(U.transpose(1,0), v))
+#     print(torch.matmul(U.transpose(1,0), v))
     v = v/(torch.norm(v))
     return v
 
