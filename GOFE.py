@@ -85,6 +85,7 @@ args['epochs'] = 100
 args['no_centering'] = False
 args['dir'] = ARGS.dir # user fill in
 device = ARGS.device
+args['device'] = ARGS.device
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
     datas = []
@@ -205,7 +206,7 @@ def compute_hessian(model, loader, num_eigenthing, args = args, cal_target = Fal
         return torch.sum(inp * W)/(torch.norm(W)) + F.cross_entropy(inp, tar) - F.cross_entropy(inp, tar)
     def Loss_y(inp, tar, W = target):
         return torch.sum(inp * W)/(torch.norm(W)) + F.cross_entropy(inp, tar) - F.cross_entropy(inp, tar)
-    booll = args['device] == 'cuda'
+    booll = args['device'] == 'cuda'
     if cal_target:
         eigenvals, eigenvecs = compute_hessian_eigenthings(model, loader,
                                                       Loss_y, num_eigenthing, use_gpu=booll)
