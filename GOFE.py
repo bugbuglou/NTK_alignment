@@ -268,8 +268,8 @@ def compute_hessian_spectrum(model, loader, path, cal_target = False):
 def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
     
-    H_w = torch.matmul(torch.from_numpy(eigvecs.cpu().copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
-    H_w.to(device)
+    H_w = torch.matmul(torch.from_numpy(eigvecs.cpu().copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.cpu().copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.cpu().copy())))
+    H_w = H_w.to(device)
     print(H_w.device)
     w.to(device)
     def output_fn_prev(x, t):
@@ -303,7 +303,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     H_w.to(device)
 #     print(H_w.device)
 #     w.to(device)
-    eigs = torch.from_numpy(eigvecs.copy())
+    eigs = torch.from_numpy(eigvecs.cpu().copy()).to(device)
 #     print(v1.shape)
     
     def output_fn_prev(x, t):
@@ -329,7 +329,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
 #     p2 = proj_v1_diff * eigvals[0] * lr
     proj_v1_del = torch.matmul(torch.matmul(eigs, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
-    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)),torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
+    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.cpu().copy(), dtype = torch.float32)).to(device),torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
     
 #     print(delta_psi)
     print(proj_v1_diff.shape)
@@ -347,7 +347,7 @@ def gofe_eig_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_o
 #     H_w.to(device)
 #     print(H_w.device)
 #     w.to(device)
-    v1 = torch.from_numpy(eigvecs.copy())[0,:]
+    v1 = torch.from_numpy(eigvecs.cpu().copy())[0,:].to(device)
     print(v1.shape)
     
     def output_fn_prev(x, t):
@@ -1280,7 +1280,9 @@ def get_task(args):
 
     return model, dataloaders, criterion
 
-def gram_schmidt(U, v):
+def gram_schmidt(U, v, device = device):
+    U = U.to(device)
+    v = v.to(device)
     #make v orthogonal to all column vectors in U
     v = v/(torch.norm(v))
     s = torch.matmul(U, torch.matmul(U.transpose(1,0), v))
@@ -1289,11 +1291,11 @@ def gram_schmidt(U, v):
     v = v/(torch.norm(v))
     return v
 
-def gen_rand(y, num):
+def gen_rand(y, num, device = device):
     y = y/(torch.norm(y))
-    U = torch.FloatTensor(np.asarray(y.cpu()).copy())
+    U = torch.FloatTensor(np.asarray(y.cpu()).copy()).to(device)
     for i in range(num):
-        v = torch.randn_like(y)
+        v = torch.randn_like(y).to(device)
         v = gram_schmidt(U, v)
         U = torch.cat([U, v], dim = 1)
     return U
