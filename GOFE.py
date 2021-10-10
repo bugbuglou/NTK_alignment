@@ -55,7 +55,7 @@ parser.add_argument('--no-centering', action='store_true', help='Disable centeri
 
 parser.add_argument('--num-eigenthings', default=10, type=float, help='number of eigenvectors computed')
 # parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
-parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping criterion')
+
 parser.add_argument('--seed', default=1, type=int, help='Seed')
 parser.add_argument('--epochs', default=300, type=int, help='epochs')
 parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping criterion')
