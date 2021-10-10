@@ -296,7 +296,7 @@ def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_outpu
 
     return corr
 
-def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model_prev, n_output, device, centering, lr):
+def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model_prev, n_output, device, centering, lr, cal_target = True):
     # compute correlation between delta psi and HPsiwwT
     
 #     H_w = torch.matmul(torch.from_numpy(eigvecs.copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
@@ -328,17 +328,19 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     proj_v1_del = torch.matmul(torch.matmul(v1, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
 #     proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
 #     p2 = proj_v1_diff * eigvals[0] * lr
-    proj_v1_del = torch.matmul(torch.matmul(eigs, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
-    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)).to(device),torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
-    
+    if cal_target:
+      proj_v1_del = torch.matmul(torch.matmul(eigs, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
+      proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)).to(device),torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
+    else:
+      proj_v1_del = torch.matmul(torch.matmul(eigs, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
+      proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)).to(device),torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), t)))
 #     print(delta_psi)
     print(proj_v1_diff.shape)
     corr = torch.dot(proj_v1_del.squeeze(1), proj_v1_diff.squeeze(1))/(torch.norm(proj_v1_del) * torch.norm(proj_v1_diff))
-    corr1 = torch.dot(w.squeeze(1),t.squeeze(1))/(torch.norm(w)*torch.norm(t))
+#     corr1 = torch.dot(w.squeeze(1),t.squeeze(1))/(torch.norm(w)*torch.norm(t))
 #     print(proj_v1_del)
 #     print(p2)
     print(corr)
-    print(corr1)
 
 def gofe_eig_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
