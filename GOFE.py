@@ -1291,7 +1291,7 @@ def gram_schmidt(U, v):
 
 def gen_rand(y, num):
     y = y/(torch.norm(y))
-    U = torch.FloatTensor(np.asarray(y).cpu().copy())
+    U = torch.FloatTensor(np.asarray(y.cpu()).copy())
     for i in range(num):
         v = torch.randn_like(y)
         v = gram_schmidt(U, v)
