@@ -52,7 +52,7 @@ parser.add_argument('--align-easy-diff', action='store_true', help='Compute alig
 parser.add_argument('--complexity', action='store_true', help='Compute trace(K) and norm(dw) in order to compute the complexity')
 parser.add_argument('--bn', action='store_false', help='Disable bn for resnets')
 parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
-
+parser.add_argument('--CT', action='store_true', help='cal_target')
 parser.add_argument('--num-eigenthings', default=10, type=int, help='number of eigenvectors computed')
 # parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
 
@@ -64,6 +64,8 @@ parser.add_argument('--stop-crit-2', default=0.02, type=float, help='Stopping cr
 ARGS = parser.parse_args()
 
 args = {}
+args['CT'] = ARGS.CT
+print(args['CT'])
 args['depth'] = ARGS.depth #6
 args['width'] = ARGS.width #256
 args['last'] = ARGS.last
@@ -1501,10 +1503,10 @@ def process(index, lr):
                 to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
 
                 to_log['eigenvals'], to_log['eigenvecs'], to_log['w_train'], tar = compute_hessian(model, dataloaders['micro_train'],
-                                                                  args['num_eigenthings'], cal_target = True)
+                                                                  args['num_eigenthings'], cal_target = args['CT'])
                 
                 to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], tar_test = compute_hessian(model, dataloaders['micro_test'],
-                                                                  args['num_eigenthings'], cal_target = True)
+                                                                  args['num_eigenthings'], cal_target = args['CT'])
                 if iterations == 0:
                     U = gen_rand(tar, num = 10) # initialise some random orthogonal vectors
                     print(torch.matmul(U.transpose(1,0), U))
@@ -1513,8 +1515,8 @@ def process(index, lr):
                 if iterations > 0:
                     to_log['orth_evo'] = orth_evo(U, model, output_fn, dataloaders['micro_train'], n_output = 10, device = device, centering = True)
                     to_log['orth_evo_test'] = orth_evo(U_test, model, output_fn, dataloaders['micro_test'], n_output = 10, device = device, centering = True)
-                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr)
-                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr)
+                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
+                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
 #                     to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_train_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
