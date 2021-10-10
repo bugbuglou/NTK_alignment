@@ -268,7 +268,7 @@ def compute_hessian_spectrum(model, loader, path, cal_target = False):
 def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
     
-    H_w = torch.matmul(torch.from_numpy(eigvecs.cpu().copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.cpu().copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.cpu().copy())))
+    H_w = torch.matmul(torch.from_numpy(eigvecs.copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
     H_w = H_w.to(device)
     print(H_w.device)
     w.to(device)
@@ -303,7 +303,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     H_w.to(device)
 #     print(H_w.device)
 #     w.to(device)
-    eigs = torch.from_numpy(eigvecs.cpu().copy()).to(device)
+    eigs = torch.from_numpy(eigvecs.copy()).to(device)
 #     print(v1.shape)
     
     def output_fn_prev(x, t):
