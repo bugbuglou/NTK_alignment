@@ -1,5 +1,5 @@
 # !pip install nngeometry
-%%writefile python.py
+# %%writefile python.py
 import argparse
 # from tasks import get_task
 import time
@@ -42,7 +42,7 @@ args['diff_type'] = 'random'
 args['align_easy_diff'] = False
 args['epochs'] = 200
 args['no_centering'] = False
-args['dir'] = '/content/drive/MyDrive/NTK_alignment_6' # user fill in
+args['dir'] = 'cifar100/vgg19' # user fill in
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
@@ -1129,6 +1129,7 @@ for i in range(len(lrs)):
     # print(params)
     optimizers.append(optim.SGD(params, lrs[i], momentum=args['mom']), weight_decay=5e-4) #, weight_decay=5e-4
 #     schedulers.append(torch.optim.lr_scheduler.MultiStepLR(optimizers[i], milestones = [100,150,200], gamma=0.1, last_epoch=-1, verbose=False))
+    schedulers.append(None)
     result_dir = os.path.join(dir, 'lr_' + str(lrs[i]) + '_' + task_dis)
     try:
         os.mkdir(result_dir)
@@ -1281,8 +1282,9 @@ def train(model, optimizer, scheduler, args, log, result_dir):
                 
 
             iterations += 1
-        print(scheduler.get_last_lr())
-        scheduler.step()
+        if scheduler is not None:
+            print(scheduler.get_last_lr())
+            scheduler.step()
 
 def test(model, loader):
     model.eval()
