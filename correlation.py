@@ -23,7 +23,7 @@ import torch.optim as optim
 parser = argparse.ArgumentParser(description='Compute NTK alignment for models with optimal lr schedule')
 
 parser.add_argument('--task', required=True, type=str, help='Task',
-                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
+                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'， 'kmnist_fcfree'])
 parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
 parser.add_argument('--last', default=256, type=int, help='last layer width')
