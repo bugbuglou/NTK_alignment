@@ -1276,10 +1276,10 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 500, 500)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 2000, 2000)
 #     dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 2000, 2000)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
-    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 500, 500)
+    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 2000, 2000)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
 
     return model, dataloaders, criterion
@@ -1480,7 +1480,7 @@ def process(index, lr):
             torch.save(model, os.path.join(result_dirs[index],'model.pkl'))
             print('stopping now')
             break
-        for batch_idx, (inputs, targets) in enumerate(dataloaders['train']):
+        for batch_idx, (inputs, targets) in enumerate(dataloaders['micro_train']):
             inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
