@@ -20,6 +20,7 @@ from torch.nn.functional import one_hot
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+parser = argparse.ArgumentParser(description='Compute NTK alignment for models with optimal lr schedule')
 
 parser.add_argument('--task', required=True, type=str, help='Task',
                     choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
