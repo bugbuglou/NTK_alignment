@@ -177,7 +177,7 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
 
 
 # check if the above codes are correct
-def compute_hessian(model, loader, num_eigenthing, cal_target = False):
+def compute_hessian(model, loader, num_eigenthing, args = args, cal_target = False):
     datas = []
     targets = []
     # i = 0
@@ -205,12 +205,13 @@ def compute_hessian(model, loader, num_eigenthing, cal_target = False):
         return torch.sum(inp * W)/(torch.norm(W)) + F.cross_entropy(inp, tar) - F.cross_entropy(inp, tar)
     def Loss_y(inp, tar, W = target):
         return torch.sum(inp * W)/(torch.norm(W)) + F.cross_entropy(inp, tar) - F.cross_entropy(inp, tar)
+    booll = args['device] == 'cuda'
     if cal_target:
         eigenvals, eigenvecs = compute_hessian_eigenthings(model, loader,
-                                                      Loss_y, num_eigenthing, use_gpu=False)
+                                                      Loss_y, num_eigenthing, use_gpu=booll)
     else:
         eigenvals, eigenvecs = compute_hessian_eigenthings(model, loader,
-                                                      Loss, num_eigenthing, use_gpu=False)
+                                                      Loss, num_eigenthing, use_gpu=booll)
         
     return eigenvals, eigenvecs, organise(W), organise(target)
     
