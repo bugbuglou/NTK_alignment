@@ -1127,7 +1127,7 @@ for i in range(len(lrs)):
     models.append(model_alt)
     params = [param for name, param in models[i].named_parameters()] # if 'in_features' in name or 'out_features' in name]
     # print(params)
-    optimizers.append(optim.SGD(params, lrs[i], momentum=args['mom']), weight_decay=5e-4) #, weight_decay=5e-4
+    optimizers.append(optim.SGD(params, lrs[i], momentum=args['mom'], weight_decay=5e-4)) #, weight_decay=5e-4
 #     schedulers.append(torch.optim.lr_scheduler.MultiStepLR(optimizers[i], milestones = [100,150,200], gamma=0.1, last_epoch=-1, verbose=False))
     schedulers.append(None)
     result_dir = os.path.join(dir, 'lr_' + str(lrs[i]) + '_' + task_dis)
