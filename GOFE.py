@@ -26,13 +26,49 @@ import torch.nn.functional as F
 import torch.optim as optim
 from hessian_eigenthings import compute_hessian_eigenthings
 from pyhessian import hessian
+parser = argparse.ArgumentParser(description='Compute NTK alignment for models with optimal lr schedule')
+
+parser.add_argument('--task', required=True, type=str, help='Task',
+                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
+parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
+parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
+parser.add_argument('--last', default=256, type=int, help='last layer width')
+parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
+# parser.add_argument('--bn', default=True, type=bool, help='whether to use BN')
+parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
+parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
+parser.add_argument('--bs', default=200, type=int, help='batch size for calculating alignment')
+parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
+parser.add_argument('--index', default=1, type=int, help='index the experiments')
+parser.add_argument('--MC', default=1, type=int, help='average over numebr of models')
+parser.add_argument('--diff-type', default='random', type=str, help='Type of difficult examples',
+                    choices=['random', 'other'])
+parser.add_argument('--device', default='cuda', type=str, help='device used', choices=['cuda', 'cpu'])
+# parser.add_argument('--align-train', action='store_true', help='Compute alignment with train set')
+# parser.add_argument('--align-test', action='store_true', help='Compute alignment with test set')
+parser.add_argument('--align-easy-diff', action='store_true', help='Compute alignment with easy and difficult samples (requires diff > 0)')
+# parser.add_argument('--layer-align-train', action='store_true', help='Compute alignment with each layer separately (train set)')
+# parser.add_argument('--layer-align-test', action='store_true', help='Compute alignment with each layer separately (test set)')
+parser.add_argument('--complexity', action='store_true', help='Compute trace(K) and norm(dw) in order to compute the complexity')
+parser.add_argument('--bn', action='store_false', help='Disable bn for resnets')
+parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
+
+parser.add_argument('--num-eigenthings', default=10, type=float, help='number of eigenvectors computed')
+# parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
+parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping criterion')
+parser.add_argument('--seed', default=1, type=int, help='Seed')
+parser.add_argument('--epochs', default=300, type=int, help='epochs')
+parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping criterion')
+parser.add_argument('--stop-crit-2', default=0.02, type=float, help='Stopping criterion 2')
+
+ARGS = parser.parse_args()
 
 args = {}
-args['depth'] = 5#6
-args['width'] = 32 #256
-args['last'] = 32
-args['num_eigenthings'] = 1
-args['task'] = 'mnist_fcfree' #'fmnist_CNN' #'mnist_fc'
+args['depth'] = ARGS.depth #6
+args['width'] = ARGS.width #256
+args['last'] = ARGS.last
+args['num_eigenthings'] = ARGS.num_eigenthings
+args['task'] = ARGS.task #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
 # args[align_train] = True
 # args[align_test] = True
@@ -40,15 +76,15 @@ args['fmncnn'] = 1
 # args[layer_align_test] = True
 # args[save_ntk_train] = True
 # args[save_ntk_test] = True
-args['lr'] = 0.001
+args['lr'] = ARGS.lr
 args['mom'] = 0.9
 args['diff'] = 0
 args['diff_type'] = 'random'
 args['align_easy_diff'] = False
 args['epochs'] = 100
 args['no_centering'] = False
-args['dir'] = '/users/hert5217/Johnny/results' # user fill in
-device = 'cpu'
+args['dir'] = ARGS.dir # user fill in
+device = ARGS.device
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
     datas = []
@@ -265,7 +301,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     H_w.to(device)
 #     print(H_w.device)
 #     w.to(device)
-    eigs = torch.from_numpy(eigvecs.copy())[:10,:]
+    eigs = torch.from_numpy(eigvecs.copy())
 #     print(v1.shape)
     
     def output_fn_prev(x, t):
@@ -291,7 +327,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     proj_v1_diff = torch.matmul(v1, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w))
 #     p2 = proj_v1_diff * eigvals[0] * lr
     proj_v1_del = torch.matmul(torch.matmul(eigs, delta_psi.reshape([sd0*sd1, sd2]).transpose(1,0)), t)
-    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32))[:10,:10],torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
+    proj_v1_diff = torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)),torch.matmul(eigs, torch.matmul(K_prev_generator.get_jacobian().to(device).reshape([sd0*sd1, sd2]).transpose(1,0), w)))
     
 #     print(delta_psi)
     print(proj_v1_diff.shape)
@@ -1234,10 +1270,10 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 2000, 2000)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 500, 500)
 #     dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 2000, 2000)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
-    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 2000, 2000)
+    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 500, 500)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
 
     return model, dataloaders, criterion
@@ -1282,7 +1318,7 @@ model_path = os.path.join(dir, task_dis + '_model')
 # torch.save(model1, model_path)
 # model1 = torch.load(model_path)
 
-lrs = [0.01, 0.0005, 0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
+lrs = [0.003, 0.0005, 0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
 # lrs = [1e-4, 5e-4]
 
 models, optimizers,result_dirs = [], [], []
@@ -1353,7 +1389,7 @@ def test(model, loader):
 # Calculate alignment between Delta \Psi and .. during actual NN training, we do this for full batch training on micro train
 # record how much each layer weights move 
 # def train(model, optimizer, args, log, result_dir):
-def process(index):
+def process(index, lr):
     columns = ['iteration', 'time', 'epoch',
               'train_loss', 'train_acc',
               'test_loss', 'test_acc']
@@ -1469,10 +1505,10 @@ def process(index):
                     U_test = gen_rand(tar_test, num = 10)
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
                 if iterations > 0:
-                      to_log['orth_evo'] = orth_evo(U, model, output_fn, dataloaders['micro_train'], n_output = 10, device = device, centering = True)
-                      to_log['orth_evo_test'] = orth_evo(U_test, model, output_fn, dataloaders['micro_test'], n_output = 10, device = device, centering = True)
-#                     gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
-#                     gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = 0.01)
+                    to_log['orth_evo'] = orth_evo(U, model, output_fn, dataloaders['micro_train'], n_output = 10, device = device, centering = True)
+                    to_log['orth_evo_test'] = orth_evo(U_test, model, output_fn, dataloaders['micro_test'], n_output = 10, device = device, centering = True)
+                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr)
+                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr)
 #                     to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_train_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
@@ -1509,4 +1545,4 @@ def process(index):
             iterations += 1
             
 for i in range(len(lrs)):
-  process(i)
+  process(i, lrs[i])
