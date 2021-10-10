@@ -21,12 +21,46 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+parser.add_argument('--task', required=True, type=str, help='Task',
+                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
+parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
+parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
+parser.add_argument('--last', default=256, type=int, help='last layer width')
+parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
+# parser.add_argument('--bn', default=True, type=bool, help='whether to use BN')
+parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
+parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
+parser.add_argument('--bs', default=200, type=int, help='batch size for calculating alignment')
+parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
+parser.add_argument('--index', default=1, type=int, help='index the experiments')
+parser.add_argument('--MC', default=1, type=int, help='average over numebr of models')
+parser.add_argument('--diff-type', default='random', type=str, help='Type of difficult examples',
+                    choices=['random', 'other'])
+parser.add_argument('--device', default='cuda', type=str, help='device used', choices=['cuda', 'cpu'])
+# parser.add_argument('--align-train', action='store_true', help='Compute alignment with train set')
+# parser.add_argument('--align-test', action='store_true', help='Compute alignment with test set')
+parser.add_argument('--align-easy-diff', action='store_true', help='Compute alignment with easy and difficult samples (requires diff > 0)')
+# parser.add_argument('--layer-align-train', action='store_true', help='Compute alignment with each layer separately (train set)')
+# parser.add_argument('--layer-align-test', action='store_true', help='Compute alignment with each layer separately (test set)')
+parser.add_argument('--complexity', action='store_true', help='Compute trace(K) and norm(dw) in order to compute the complexity')
+parser.add_argument('--bn', action='store_false', help='Disable bn for resnets')
+parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
+
+# parser.add_argument('--save-ntk-train', action='store_true', help='Save training set ntk')
+# parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
+
+parser.add_argument('--seed', default=1, type=int, help='Seed')
+parser.add_argument('--epochs', default=300, type=int, help='epochs')
+parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping criterion')
+parser.add_argument('--stop-crit-2', default=0.02, type=float, help='Stopping criterion 2')
+
+ARGS = parser.parse_args()
 
 args = {}
-args['depth'] = 0#6
-args['width'] = 0 #256
-args['last'] = 256
-args['task'] = 'cifar100_vgg19' #'cifar10_resnet18' #'fmnist_CNN' #'mnist_fc'
+args['depth'] = ARGS.depth#6
+args['width'] = ARGS.width #256
+args['last'] = ARGS.last
+args['task'] = ARGS.task #'cifar10_resnet18' #'fmnist_CNN' #'mnist_fc'
 args['fmncnn'] = 1
 args['bn'] = True
 # args[align_train] = True
@@ -40,9 +74,9 @@ args['mom'] = 0.9
 args['diff'] = 0
 args['diff_type'] = 'random'
 args['align_easy_diff'] = False
-args['epochs'] = 200
+args['epochs'] = ARGS.epochs
 args['no_centering'] = False
-args['dir'] = 'cifar100/vgg19' # user fill in
+args['dir'] = ARGS.dir # user fill in
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
@@ -1113,7 +1147,7 @@ model_path = os.path.join(dir, task_dis + '_model')
 torch.save(model1, model_path)
 # model1 = torch.load(model_path)
 
-lrs = [0.002, 0.005, 0.01] #1e-5, 5e-5, 1e-4, 5e-4, #0.001, 0.002, 0.003, 
+lrs = [0.002, 0.0005, 0.005, 0.01] #1e-5, 5e-5, 1e-4, 5e-4, #0.001, 0.002, 0.003, 
 # lrs = [1e-4, 5e-4]
 
 models, optimizers,result_dirs, schedulers = [], [], [], []
