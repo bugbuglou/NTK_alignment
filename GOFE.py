@@ -268,7 +268,7 @@ def compute_hessian_spectrum(model, loader, path, cal_target = False):
 def gofe_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
     
-    H_w = torch.matmul(torch.from_numpy(eigvecs.copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
+    H_w = torch.matmul(torch.from_numpy(eigvecs.cpu().copy()).transpose(1,0), torch.matmul(torch.diag(torch.tensor(eigvals.copy(), dtype = torch.float32)), torch.from_numpy(eigvecs.copy())))
     H_w.to(device)
     print(H_w.device)
     w.to(device)
@@ -1291,7 +1291,7 @@ def gram_schmidt(U, v):
 
 def gen_rand(y, num):
     y = y/(torch.norm(y))
-    U = torch.FloatTensor(np.asarray(y).copy())
+    U = torch.FloatTensor(np.asarray(y).cpu().copy())
     for i in range(num):
         v = torch.randn_like(y)
         v = gram_schmidt(U, v)
