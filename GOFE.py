@@ -53,7 +53,7 @@ parser.add_argument('--complexity', action='store_true', help='Compute trace(K) 
 parser.add_argument('--bn', action='store_false', help='Disable bn for resnets')
 parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
 
-parser.add_argument('--num-eigenthings', default=10, type=float, help='number of eigenvectors computed')
+parser.add_argument('--num-eigenthings', default=10, type=int, help='number of eigenvectors computed')
 # parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
 
 parser.add_argument('--seed', default=1, type=int, help='Seed')
