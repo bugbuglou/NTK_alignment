@@ -1372,7 +1372,7 @@ def stopping_criterion(log):
 
 def do_compute_ntk(iterations):
     # return iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
-    return iterations == 0 or iterations in (1 * len(dataloaders['train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
+    return iterations == 0 or iterations in (1 * len(dataloaders['micro_train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
 
 
 def test(model, loader):
