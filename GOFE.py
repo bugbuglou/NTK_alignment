@@ -343,6 +343,7 @@ def gofe_eig_corr_verify(model, output_fn, loader, eigvals, eigvecs, w, t, model
 #     print(proj_v1_del)
 #     print(p2)
     print(corr)
+    return corr
 
 def gofe_eig_corr(model, output_fn, loader, eigvals, eigvecs, w, model_prev, n_output, device, centering):
     # compute correlation between delta psi and HPsiwwT
@@ -1326,7 +1327,7 @@ model_path = os.path.join(dir, task_dis + '_model')
 # torch.save(model1, model_path)
 # model1 = torch.load(model_path)
 
-lrs = [0.003, 0.0005, 0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
+lrs = [0.0005,0.003, 0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
 # lrs = [1e-4, 5e-4]
 
 models, optimizers,result_dirs = [], [], []
@@ -1429,6 +1430,8 @@ def process(index, lr):
     columns.append('corr_gofe_test_eig1')
     columns.append('orth_evo')
     columns.append('orth_evo_test')
+    columns.append('corr_proj_eig')
+    columns.append('corr_proj_eig_test')
     log=pd.DataFrame(columns=columns)
     model = models[index]
     optimizer = optimizers[index]
@@ -1515,8 +1518,8 @@ def process(index, lr):
                 if iterations > 0:
                     to_log['orth_evo'] = orth_evo(U, model, output_fn, dataloaders['micro_train'], n_output = 10, device = device, centering = True)
                     to_log['orth_evo_test'] = orth_evo(U_test, model, output_fn, dataloaders['micro_test'], n_output = 10, device = device, centering = True)
-                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
-                    gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
+                    to_log['corr_proj_eig'] = gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
+                    to_log['corr_proj_eig_test'] = gofe_eig_corr_verify(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], t = tar_test, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
 #                     to_log['corr_gofe_train'] = gofe_corr(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_test'] = gofe_corr(model, output_fn, dataloaders['micro_test'], log['eigenvals_test'][len(log)-1], log['eigenvecs_test'][len(log)-1], log['w_test'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
 #                     to_log['corr_gofe_train_layer'] = gofe_corr_layer(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], model_prev = model_prev, n_output = 10, device = device, centering = False)
