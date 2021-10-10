@@ -744,7 +744,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import torch.nn as nn
 
 import torchvision.transforms as transforms
-from torchvision.datasets import CIFAR10, MNIST, KMNIST, FashionMNIST
+from torchvision.datasets import CIFAR100, CIFAR10, MNIST, KMNIST, FashionMNIST
 # from models import VGG, ResNet18
 import random
 import numpy as np
