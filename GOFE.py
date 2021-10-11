@@ -1338,7 +1338,7 @@ for i in range(len(lrs)):
     models.append(model_alt)
     params = [param for name, param in models[i].named_parameters()] # if 'in_features' in name or 'out_features' in name]
     # print(params)
-    optimizers.append(optim.SGD(params, lrs[i])) #, momentum=args['mom'], weight_decay = 5e-4
+    optimizers.append(optim.SGD(params, lrs[i], momentum=args['mom'], weight_decay = 5e-4)) #, momentum=args['mom'], weight_decay = 5e-4
     result_dir = os.path.join(dir, 'lr = ' + str(lrs[i]) + ',' + task_dis)
     try:
         os.mkdir(result_dir)
@@ -1571,7 +1571,7 @@ def process(index, lr):
                 log.loc[len(log)] = to_log
                 print(log.loc[len(log) - 1])
 
-                log.to_pickle(os.path.join(result_dirs[index],'log2_wo_momwd.pkl'))
+                log.to_pickle(os.path.join(result_dirs[index],'log2_w_momwd.pkl'))
                 
 
             iterations += 1
