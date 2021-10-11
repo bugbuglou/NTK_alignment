@@ -1535,7 +1535,7 @@ def process(index, lr):
                     to_log['U'] = U
                     to_log['U_test'] = U_test
                 # print(to_log['eigenvecs'].shape[1] == sum(widths))
-                if iterations > 0:
+#                 if iterations > 0:
 #                     to_log['orth_evo'] = orth_evo(U, model, output_fn, dataloaders['micro_train'], n_output = 10, device = device, centering = True)
 #                     to_log['orth_evo_test'] = orth_evo(U_test, model, output_fn, dataloaders['micro_test'], n_output = 10, device = device, centering = True)
 #                     to_log['corr_proj_eig'] = gofe_eig_corr_verify(model, output_fn, dataloaders['micro_train'], log['eigenvals'][len(log)-1], log['eigenvecs'][len(log)-1], log['w_train'][len(log)-1], t = tar, model_prev = model_prev, n_output = 10, device = device, centering = False, lr = lr, cal_target =args['CT'])
