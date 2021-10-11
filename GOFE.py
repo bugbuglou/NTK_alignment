@@ -1528,6 +1528,7 @@ def process(index, lr):
                 
                 to_log['eigenvals_test'], to_log['eigenvecs_test'], to_log['w_test'], to_log['tar_test'] = compute_hessian(model, dataloaders['micro_test'],
                                                                   args['num_eigenthings'], cal_target = args['CT'])
+                tar, tar_test = to_log['tar'], to_log['tar_test']
                 if iterations == 0:
                     U = gen_rand(tar, num = 10) # initialise some random orthogonal vectors
                     print(torch.matmul(U.transpose(1,0), U))
