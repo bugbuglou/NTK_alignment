@@ -1188,8 +1188,8 @@ def stopping_criterion(log):
     return False
 
 def do_compute_ntk(iterations):
-    # return iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
-    return iterations == 0 or iterations in (1 * len(dataloaders['train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
+    return iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
+#     return iterations == 0 or iterations in (1 * len(dataloaders['train'])) * (np.arange(args['epochs'])).astype('int') #iterations == 0 or iterations in 5 * (1.15 ** np.arange(300)).astype('int')
 
 
 def test(model, loader):
@@ -1284,6 +1284,14 @@ def process(index, args):
                 # to_log['time'] = time.time() - start_time
             # if args.layer_align_train:
             # compute top 20 eigenvalues/eigenvectors
+                to_log['layer_align_train'], _, _ = \
+                    layer_alignment(model, output_fn, dataloaders['micro_train'], 10,
+                                    centering=not args['no_centering'])
+            # # # if args.layer_align_test:
+                to_log['layer_align_test'], _, _ = \
+                    layer_alignment(model, output_fn, dataloaders['micro_test'], 10,
+                                    centering=not args['no_centering'])
+              
                 to_log['corr_y_train'] = SIM(model, dataloaders['micro_train'])
                 to_log['corr_y_test'] = SIM(model, dataloaders['micro_test'])
 
