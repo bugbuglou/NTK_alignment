@@ -1440,7 +1440,7 @@ lrs = [0.01] #, 0.0005, 0.0002, 0.001, 0.005, 0.01, 0.02, 0.05
 
 models, optimizers,result_dirs = [], [], []
 for i in range(len(lrs)):
-    model_alt = FC(depth = args['depth'], width = args['width'], last = args['last'])
+    model_alt,_,_ = get_task(args)
     model_alt.load_state_dict(model1.state_dict())
     model_alt = model_alt.to(device)
     models.append(model_alt)
