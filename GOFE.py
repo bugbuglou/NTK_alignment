@@ -1321,7 +1321,7 @@ def get_task(args):
             if args['width'] != 0:
                 raise NotImplementedError
         elif model_name == 'fcfree':
-            model = FC_cifar10(depth = args.depth, width = args.width, last = args.last)
+            model = FC_cifar10(depth = args['depth'], width = args['width'], last = args['last'])
             
     elif task_name == 'mnist':
         dataloaders['train'], dataloaders['test'] = get_mnist(args)
