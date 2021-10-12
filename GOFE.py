@@ -764,6 +764,79 @@ class FC(nn.Module):
         # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
 
+class FC_cifar10(nn.Module):
+    def __init__(self, depth, width, last, bn=False, base=0):
+        super(FC_cifar10, self).__init__()
+        self.bn = bn 
+        base = base if base != 0 else 64
+        self.base = base
+        self.last = last
+        self.in_features = nn.Linear(32*32*3, width)
+        self.features = self._make_layers(depth-2, width)
+        self.out_features = nn.Linear(self.last, 10)
+        # self.classifier = nn.Linear(8 * base, 10)
+
+    def forward(self, x):
+        out = nn.Flatten()(x)
+        out = F.relu(self.in_features(out))
+        out = self.features(out)
+        out = self.out_features(out)
+        # out = out.view(out.size(0), -1)
+        # out = self.classifier(out)
+        return out
+
+    def _make_layers(self, depth, width):
+        layers = []
+        # in_channels = 3
+        for i in range(depth):
+            # if i==0:
+            #     layers += [nn.Flatten(), nn.Linear(28 * 28, width), nn.ReLU()]
+            # elif i<depth-1:
+            if i != depth -1:
+                layers += [nn.Linear(width, width), nn.ReLU()]
+            else:
+                layers += [nn.Linear(width, self.last), nn.ReLU()]
+            # else:
+                # layers += [nn.Linear(width, 10)]
+        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
+      
+class FC_cifar100(nn.Module):
+    def __init__(self, depth, width, last, bn=False, base=0):
+        super(FC_cifar100, self).__init__()
+        self.bn = bn 
+        base = base if base != 0 else 64
+        self.base = base
+        self.last = last
+        self.in_features = nn.Linear(32*32*3, width)
+        self.features = self._make_layers(depth-2, width)
+        self.out_features = nn.Linear(self.last, 100)
+        # self.classifier = nn.Linear(8 * base, 10)
+
+    def forward(self, x):
+        out = nn.Flatten()(x)
+        out = F.relu(self.in_features(out))
+        out = self.features(out)
+        out = self.out_features(out)
+        # out = out.view(out.size(0), -1)
+        # out = self.classifier(out)
+        return out
+
+    def _make_layers(self, depth, width):
+        layers = []
+        # in_channels = 3
+        for i in range(depth):
+            # if i==0:
+            #     layers += [nn.Flatten(), nn.Linear(28 * 28, width), nn.ReLU()]
+            # elif i<depth-1:
+            if i != depth -1:
+                layers += [nn.Linear(width, width), nn.ReLU()]
+            else:
+                layers += [nn.Linear(width, self.last), nn.ReLU()]
+            # else:
+                # layers += [nn.Linear(width, 10)]
+        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
 
 class VGG(nn.Module):
     def __init__(self, vgg_name, bn=False, base=0):
@@ -795,7 +868,37 @@ class VGG(nn.Module):
                 in_channels = out_channels
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
+      
+class VGG100(nn.Module):
+    def __init__(self, vgg_name, bn=False, base=0):
+        super(VGG100, self).__init__()
+        self.bn = bn 
+        base = base if base != 0 else 64
+        self.base = base
+        self.features = self._make_layers(cfg[vgg_name])
+        self.classifier = nn.Linear(8 * base, 100)
 
+    def forward(self, x):
+        out = self.features(x)
+        out = out.view(out.size(0), -1)
+        out = self.classifier(out)
+        return out
+
+    def _make_layers(self, cfg):
+        layers = []
+        in_channels = 3
+        for x in cfg:
+            if x == 'M':
+                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+            else:
+                out_channels = x * self.base // 64
+                layers += [nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)]
+                if self.bn:
+                    layers += [nn.BatchNorm2d(x)]
+                layers += [nn.ReLU()]
+                in_channels = out_channels
+        layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -1206,15 +1309,20 @@ def get_task(args):
     task_name, model_name = args['task'].split('_')
 
     if task_name == 'cifar10':
-        if args['depth'] != 0:
-            raise NotImplementedError
+#         if args['depth'] != 0:
+#             raise NotImplementedError
         dataloaders['train'], dataloaders['test'] = get_cifar10(args)
         if model_name == 'vgg19':
+            if args['depth'] != 0:
+                raise NotImplementedError
             model = VGG('VGG19', base=args['width'])
         elif model_name == 'resnet18':
             model = ResNet18()
             if args['width'] != 0:
                 raise NotImplementedError
+        elif model_name == 'fcfree':
+            model = FC_cifar10(depth = args.depth, width = args.width, last = args.last)
+            
     elif task_name == 'mnist':
         dataloaders['train'], dataloaders['test'] = get_mnist(args)
         if model_name == 'fc':
