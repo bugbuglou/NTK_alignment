@@ -1612,7 +1612,7 @@ def process(index, lr):
             
             if do_compute_ntk(iterations):
                 to_log = pd.Series()
-                model_prev = FC(depth = args['depth'], width = args['width'], last = args['last'])
+                model_prev, _, _ = get_task(args)
                 model_prev.load_state_dict(model.state_dict())
                 to_log['model'] = model_prev
 #                 model_prev = model_prev.to(device)
