@@ -1169,10 +1169,10 @@ def get_task(args):
         add_difficult_examples(dataloaders, args)
 
     # if args[align_train or args.layer_align_train or args.save_ntk_train or args.complexity:
-    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 500, 500)
+    dataloaders['micro_train'] = extract_small_loader(dataloaders['train'], 200, 200)
 #     dataloaders['micro_train_1'] = extract_small_loader(dataloaders['micro_train'], 500, 500)
     # if args.align_test or args.layer_align_test or args.save_ntk_test:
-    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 500, 500)
+    dataloaders['micro_test'] = extract_small_loader(dataloaders['test'], 200, 200)
     dataloaders['mini_test'] = extract_small_loader(dataloaders['test'], 1000, 1000)
 
     return model, dataloaders, criterion
@@ -1344,15 +1344,15 @@ def process(index, args):
 
                 
                 num = args['num_eigenthings']
-                to_log['correlation_matrix'] = np.zeros([num,num,args['depth']])
-                for j in range(num):
-                  for k in range(j,num):
-                    for i in range(args['depth']):
-                        k1 = to_log['eigenvecs'][j][widths[i]:widths[i+1]]
-                        k2 = to_log['eigenvecs'][k][widths[i]:widths[i+1]]
-                        a = np.dot(k1, k2)
-                        to_log['correlation_matrix'][j,k,i] = a
-                        to_log['correlation_matrix'][k,j,i] = a
+#                 to_log['correlation_matrix'] = np.zeros([num,num,args['depth']])
+#                 for j in range(num):
+#                   for k in range(j,num):
+#                     for i in range(args['depth']):
+#                         k1 = to_log['eigenvecs'][j][widths[i]:widths[i+1]]
+#                         k2 = to_log['eigenvecs'][k][widths[i]:widths[i+1]]
+#                         a = np.dot(k1, k2)
+#                         to_log['correlation_matrix'][j,k,i] = a
+#                         to_log['correlation_matrix'][k,j,i] = a
                 
                 
                 to_log['iteration'] = iterations
