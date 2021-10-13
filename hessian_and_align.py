@@ -35,6 +35,7 @@ parser.add_argument('--task', required=True, type=str, help='Task',
 parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
 parser.add_argument('--last', default=256, type=int, help='last layer width')
+parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
 parser.add_argument('--lr1', default=0.1, type=float, help='Learning rate')
 parser.add_argument('--lr2', default=0.1, type=float, help='Learning rate')
 parser.add_argument('--lr3', default=0.1, type=float, help='Learning rate')
