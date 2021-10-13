@@ -1,5 +1,5 @@
 #test code
-%%writefile hessian.py
+# %%writefile hessian.py
 # !pip install nngeometry
 # !pip install --upgrade git+https://github.com/bugbuglou/hessian.git
 # !pip install pyhessian
