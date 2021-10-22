@@ -1,18 +1,13 @@
-# !pip install nngeometry
 import argparse
-# from tasks import get_task
-
 import time
 import os
 import pandas as pd
-# from alignment import alignment, layer_alignment, compute_trK
 import numpy as np
 from nngeometry.object import PVector
 from nngeometry.object.fspace import FMatDense
 from nngeometry.object.pspace import PMatDense
 from nngeometry.object.vector import FVector
 from nngeometry.object import PMatImplicit
-
 from nngeometry.generator import Jacobian
 from nngeometry.layercollection import LayerCollection
 import torch
@@ -42,15 +37,9 @@ parser.add_argument('--device', default='cuda', type=str, help='device used', ch
 # parser.add_argument('--align-train', action='store_true', help='Compute alignment with train set')
 # parser.add_argument('--align-test', action='store_true', help='Compute alignment with test set')
 parser.add_argument('--align-easy-diff', action='store_true', help='Compute alignment with easy and difficult samples (requires diff > 0)')
-# parser.add_argument('--layer-align-train', action='store_true', help='Compute alignment with each layer separately (train set)')
-# parser.add_argument('--layer-align-test', action='store_true', help='Compute alignment with each layer separately (test set)')
 parser.add_argument('--complexity', action='store_true', help='Compute trace(K) and norm(dw) in order to compute the complexity')
 parser.add_argument('--bn', action='store_false', help='Disable bn for resnets')
 parser.add_argument('--no-centering', action='store_true', help='Disable centering when computing kernels')
-
-# parser.add_argument('--save-ntk-train', action='store_true', help='Save training set ntk')
-# parser.add_argument('--save-ntk-test', action='store_true', help='Save test set ntk')
-
 parser.add_argument('--seed', default=1, type=int, help='Seed')
 parser.add_argument('--epochs', default=300, type=int, help='epochs')
 parser.add_argument('--stop-crit-1', default=0.1, type=float, help='Stopping criterion')
@@ -58,32 +47,10 @@ parser.add_argument('--stop-crit-2', default=0.02, type=float, help='Stopping cr
 
 args = parser.parse_args()
 device = args.device
-# args.depth = 100
-# print(args.depth)
 
 Args = {}
-# args['depth'] = 90#6
-# # args['width'] = 256 #256
-# # args['last'] = 256
-# args['width'] = 256 #256
-# args['last'] = 256
-# args['task'] = 'fmnist_fcfree' #'cifar10_resnet18' #'mnist_fcfree' #'cifar10_vgg19' #'mnist_fc'
-# args[align_train] = True
-# args[align_test] = True
-# args[layer_align_train] = True
-# args[layer_align_test] = True
-# args[save_ntk_train] = True
-# args[save_ntk_test] = True
-# args['lr'] = 0.001
-# args['mom'] = 0.9
-# args['diff'] = 0
-# args['diff_type'] = 'random'
-# args['align_easy_diff'] = False
-# args['epochs'] = 300
 Args['no_centering'] = False
 print(args.bn)
-# args['dir'] = '/content/drive/MyDrive/NTK_alignment_5' # user fill in
-# device = 'cuda'
 
 
 def extract_target_loader(baseloader, target_id, length, batch_size):
@@ -129,7 +96,6 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
     model.eval()
     lc = LayerCollection.from_model(model)
     alignments = []
-    # denoms = []
     nums = []
     Ss = []
     targets = torch.cat([args[1] for args in iter(loader)])
@@ -154,14 +120,8 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
         K_dense = FMatDense(generator)
         yTKy = K_dense.vTMv(targets)
         sd = K_dense.data.size()
-        # print(sd)
-        # print(targets.get_flat_representation().view(-1).shape)
-        # print(K_dense.data.shape)
         T = torch.mv(K_dense.data.view(sd[0]*sd[1], sd[2]*sd[3]), targets.get_flat_representation().view(-1))
         T_frob = torch.norm(T)
-        # print(T_frob**2)
-        # print(torch.dot(T,T))
-        # frobK = K_dense.frobenius_norm()
         frobK = K_dense.frobenius_norm()
         S = T_frob**2/(frobK**2*torch.norm(targets.get_flat_representation())**2)
         # S = S/()
@@ -178,11 +138,11 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
 
 
 def SIM(model, loader):
-    # model.eval()
+    # get simmilarity between w and \tilde{Y}
     datas = []
     target = torch.cat([args[1] for args in iter(loader)])
     target = one_hot(target, num_classes=n_output).float()
-    # target -= target.mean(dim=0)
+
     for d, t in iter(loader):
         datas.append(d.to(device))
     datas = torch.cat(datas)#[:length]
@@ -190,17 +150,13 @@ def SIM(model, loader):
     output = model.forward(datas)
     O = output.exp()
     T = 1/(O.sum(dim = 1).unsqueeze(1))
-    # O = O * T
     f = O * T
-    #np.asarray(f.view(-1).cpu().detach()) - np.asarray(target.view(-1).cpu().detach())
     w_0 = torch.FloatTensor(np.asarray(f.view(-1).cpu().detach()) - np.asarray(target.view(-1).cpu().detach())).to(device)
     target -= target.mean(dim=0)
     target.to(device)
-    # print(target)
-    # print(w_0)
     similarity = torch.matmul(target.reshape([1,-1]), w_0.reshape(-1,1))/(torch.norm(target)*torch.norm(w_0))
 
-    return similarity #np.matmul(w_0.reshape([-1,1]), w_0.reshape([1,-1]))
+    return similarity
 
 
 
@@ -209,8 +165,6 @@ def similarity_w_0_y(Mat, loader):
     target = one_hot(target).float()
     target -= target.mean(dim=0)
     y_1 = np.asarray(target.view(-1).cpu().detach())
-    # W_inc = SIM(model, target, y_1, loader = dataloaders['micro_train'])
-    # W = W + W_inc
     y_post = np.matmul(Mat, y_1.reshape([-1,1]))
     similarity = (np.dot(y_post.reshape([-1]), y_1)/(np.linalg.norm(y_post)*np.linalg.norm(y_1)))
     
@@ -229,34 +183,6 @@ cfg = {
     'VGG16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
     'VGG19': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
 }
-
-# class FC(nn.Module):
-#     def __init__(self, depth, width, bn=False, base=0):
-#         super(FC, self).__init__()
-#         self.bn = bn 
-#         base = base if base != 0 else 64
-#         self.base = base
-#         self.features = self._make_layers(depth, width)
-#         # self.classifier = nn.Linear(8 * base, 10)
-
-#     def forward(self, x):
-#         out = self.features(x)
-#         # out = out.view(out.size(0), -1)
-#         # out = self.classifier(out)
-#         return out
-
-#     def _make_layers(self, depth, width):
-#         layers = []
-#         # in_channels = 3
-#         for i in range(depth):
-#             if i==0:
-#                 layers += [nn.Flatten(), nn.Linear(28 * 28, width), nn.ReLU()]
-#             elif i<depth-1:
-#                 layers += [nn.Linear(width, width), nn.ReLU()]
-#             else:
-#                 layers += [nn.Linear(width, 10)]
-#         # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
-#         return nn.Sequential(*layers)
 
 class FC(nn.Module):
     def __init__(self, depth, width, last, bn=False, base=0):
@@ -555,7 +481,6 @@ import torch.nn as nn
 
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR100, CIFAR10, MNIST, KMNIST, FashionMNIST
-# from models import VGG, ResNet18
 import random
 import numpy as np
 
@@ -790,8 +715,6 @@ def get_task(args):
     task_name, model_name = args.task.split('_')
 
     if task_name == 'cifar10':
-#         if args.depth != 0:
-#             raise NotImplementedError
         dataloaders['train'], dataloaders['test'] = get_cifar10(args)
         if model_name == 'vgg19':
             model = VGG('VGG19', base=args.width)
@@ -875,10 +798,7 @@ def get_task(args):
   
 from tqdm import tqdm
 import concurrent.futures 
-# import multiprocessing
-import torch.multiprocessing as mp
-# depths = list((np.arange(8) + 1)*10)
-# depths = [10, 20, 30, 40, 50, 60]
+
 dataset_name, model_name = args.task.split('_')[0], args.task.split('_')[1]
 if dataset_name == 'mnist':
     depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
