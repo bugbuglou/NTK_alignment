@@ -176,103 +176,6 @@ def layer_alignment(model, output_fn, loader, n_output, centering=True):
     model.train()
     return alignments, nums, Ss
 
-def layer_alignment_matrix(model, output_fn, loader, n_output, centering=True):
-    lc = LayerCollection.from_model(model)
-    # alignments = []
-
-    targets = torch.cat([args[1] for args in iter(loader)])
-    # targets = one_hot(targets).float()
-    # targets -= targets.mean(dim=0)
-    # targets = FVector(vector_repr=targets.t().contiguous())
-    means, mean_dists, mean_dists_2 ,cov_frobs, covs, ratios, ratios1, ratios2, ratios3, os = [], [], [], [], [], [], [], [], [], []
-    for l in lc.layers.items():
-        # print(l)
-        lc_this = LayerCollection()
-        lc_this.add_layer(*l)
-
-        # generator = Jacobian(layer_collection=lc_this,
-        #                      model=model,
-        #                      loader=loader,
-        #                      function=output_fn,
-        #                      n_output=n_output,
-        #                      centering=centering)
-
-        # K = generator.get_jacobian()
-        
-        mean1, mean2, cov_frob, o = [], [], [], []
-        for i in range(10):
-            L = list(targets == i)
-            # print(targets[L])
-            target_loader = extract_target_loader(loader, L, length = len(L), batch_size = len(L))
-            generator = Jacobian(layer_collection=lc_this,
-                             model=model,
-                             loader=target_loader,
-                             function=output_fn,
-                             n_output=n_output,
-                             centering=False)
-            m = generator.get_jacobian()
-            # print(m.shape)
-            h = m.mean(dim = 1).squeeze()
-            # t = h.shape[0]
-            # print(h/10)
-            t = h[i,:].reshape([1,-1]) - h.mean(dim = 0).unsqueeze(0)
-            mean1.append(t)
-            s = torch.matmul(t, t.transpose(0,1))
-            o.append(s)
-            # m = m.reshape([m.size(0),-1])
-            # mean.append(m.mean(dim = 0))
-            mean2.append(h.reshape([1,-1]))
-        for i in range(10):
-            L = list(targets == i)
-            target_loader = extract_target_loader(loader, L, length = len(L), batch_size = len(L))
-            generator = Jacobian(layer_collection=lc_this,
-                             model=model,
-                             loader=target_loader,
-                             function=output_fn,
-                             n_output=n_output,
-                             centering=True)
-            cov = PMatDense(generator).frobenius_norm()
-            cov_frob.append(cov)
-            
-        m = sum(mean1)
-        os.append(sum(o))
-        # t1 = torch.trace(mean_distance(mean1))
-        t1 = torch.matmul(m,m.transpose(0,1))
-        t2 = torch.trace(mean_distance(mean2))
-        b = sum(cov_frob)
-        means.append(mean1)
-        mean_dists.append(t1)
-        mean_dists_2.append(t2)
-        cov_frobs.append(cov_frob)
-        covs.append(b) #+ frobenius(mean_distance(mean).cpu())
-        ratios.append(t1/(b+t2))
-        ratios1.append(b/t2)
-        ratios2.append(t2/t1)
-        ratios3.append(t2/sum(o))
-
-        # extract_target_loader(baseloader, target, length, batch_size)
-
-    
-    return ratios3, mean_dists, mean_dists_2, cov_frobs, covs, ratios, ratios1, ratios2
-
-def get_loss(model, loader):
-    model.eval()
-    datas = []
-    targets = []
-    # i = 0
-    # length = 2000
-    for d, t in iter(loader):
-        datas.append(d.to(device))
-        targets.append(t.to(device))
-        # i += d.size(0)
-        # if i >= length:
-        #     break
-    datas = torch.cat(datas)#[:length]
-    targets = torch.cat(targets)#[:length]
-    output = model.forward(datas)
-    loss = criterion(output, targets)
-    l = (1 - torch.exp(-loss))/9
-    return l
 
 def SIM(model, loader):
     # model.eval()
@@ -299,81 +202,7 @@ def SIM(model, loader):
 
     return similarity #np.matmul(w_0.reshape([-1,1]), w_0.reshape([1,-1]))
 
-def two_terms_layer(model, output_fn, loader, n_output, centering=True):
-    datas = []
-    target = torch.cat([args[1] for args in iter(loader)])
-    # tar = target
-    target = one_hot(target, num_classes=n_output).float()
-    # tar1 = target
-    # target -= target.mean(dim=0)
-    for d, t in iter(loader):
-        datas.append(d.to(device))
-    datas = torch.cat(datas)#[:length]
 
-    output = model.forward(datas)
-    O = output.exp()
-    T = 1/(O.sum(dim = 1).unsqueeze(1))
-    # O = O * T
-    f = O * T 
-    f -= target
-    target -= target.mean(dim=0)
-    target = target.transpose(0,1).reshape([1,-1]).squeeze(0)
-    w_0 = f.transpose(0,1).reshape([1,-1]).squeeze(0)
-    # targets = FVector(vector_repr=target.t().contiguous())
-    # w_0s = FVector(vector_repr=f.t().contiguous())
-    #np.asarray(f.view(-1).cpu().detach()) - np.asarray(target.view(-1).cpu().detach())
-    # w_0 = torch.FloatTensor(np.asarray(f.reshape([1,-1]).transpose(0,1).squeeze(1).cpu().detach()) - np.asarray(target.reshape([1,-1]).transpose(0,1).squeeze(1).cpu().detach())).to('cuda')
-    # target -= target.mean(dim=0)
-    # targets = FVector(vector_repr=target.t().contiguous())
-    # target.to('cuda')
-    # target = targets.get_flat_representation().view(-1)
-    # w_0 = w_0s.get_flat_representation().view(-1)
-
-    lc = LayerCollection.from_model(model)
-    result1s, result2s, aligns = [], [], []
-
-    for l in lc.layers.items():
-        # print(l)
-        lc_this = LayerCollection()
-        lc_this.add_layer(*l)
-
-        generator = Jacobian(layer_collection=lc_this,
-                             model=model,
-                             loader=loader,
-                             function=output_fn,
-                             n_output=n_output,
-                             centering=centering)
-        K_dense = FMatDense(generator)
-        # align = K_dense.vTMv(targets)
-        # print(align)
-        K = K_dense.data
-        sd = K.size()
-        K = K.view(sd[0]*sd[1], sd[2]*sd[3])
-        # t = targets.get_flat_representation().view(-1)
-        yTKy = torch.dot(target, torch.mv(K, target))
-        # yTKy = torch.dot(target, yTKy)
-        # print(yTKy)
-        yTKy_normal = yTKy/(torch.norm(target)**2)
-        align = yTKy_normal/(torch.norm(K))
-        # align = align/(torch.norm(K) * torch.norm(target)**2)
-        wTKy = torch.dot(w_0, torch.mv(K, target))/(torch.norm(w_0)*torch.norm(target))
-        # wTKy = torch.matmul(w_0.view(1,-1), K)
-        # wTKy = torch.matmul(wTKy, target.view(-1,1))/(torch.norm(w_0)*torch.norm(target))
-        result_1 = wTKy/yTKy_normal
-        KK = torch.matmul(K,K)
-        # wTKKw = torch.matmul(w_0.view(1,-1),torch.matmul(KK,w_0.view(-1,1)))/(torch.norm(K)**2 * torch.norm(w_0)**2)
-        wTKKw = torch.dot(w_0, torch.mv(KK, w_0))/(torch.norm(K)**2 * torch.norm(w_0)**2)
-
-        result_2 = wTKKw
-        print(result_1)
-        print(result_2)
-        print(align)
-        result1s.append(result_1)
-        result2s.append(result_2)
-        aligns.append(align)
-
-   
-    return result1s, result2s, aligns
 
 def similarity_w_0_y(Mat, loader):
     target = torch.cat([args[1] for args in iter(loader)])
@@ -1053,13 +882,15 @@ import torch.multiprocessing as mp
 dataset_name, model_name = args.task.split('_')[0], args.task.split('_')[1]
 if dataset_name == 'mnist':
     depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
-    lrs = [0.003, 0.003, 0.003, 0.002, 0.001, 0.0005, 0.0002, 0.0001, 0.0001, 0.0001]
+    lrs = [0.003, 0.003, 0.003, 0.002, 0.001, 0.0007, 0.0003, 0.0002, 0.0001, 0.00007]
+    Epochs = [100, 100, 100, 100, 100, 100, 200,200,300,300]
 elif dataset_name == 'fmnist':
     depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
-    lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
+    lrs = [0.003, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0002, 0.0001, 0.0002, 0.0001]
+    Epochs = [100, 100, 100, 100, 100, 100, 200,200,300,300]
 elif dataset_name == 'cifar10' and model_name == 'vgg19':
     depths = [0]
-    lrs = [0.005]
+    lrs = [0.01]
 elif dataset_name == 'cifar10' and model_name == 'vgg11':
     depths = [0]
     lrs = [0.01]
@@ -1071,7 +902,8 @@ elif dataset_name == 'cifar10' and model_name == 'vgg16':
     lrs = [0.007]
 elif dataset_name == 'cifar10' and model_name == 'fcfree':
     depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
-    lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
+    lrs = [0.005, 0.003, 0.003, 0.001, 0.001, 0.0007, 0.0005, 0.0005, 0.0001, 0.0001]
+    Epochs = [100, 100, 150, 200, 250, 300, 300,500,500,700]
 elif dataset_name == 'cifar100' and model_name == 'vgg19':
     depths = [0]
     lrs = [0.005]
@@ -1084,9 +916,6 @@ elif dataset_name == 'cifar10' and model_name == 'vgg13':
 elif dataset_name == 'cifar10' and model_name == 'vgg16':
     depths = [0]
     lrs = [0.007]
-elif dataset_name == 'cifar100' and model_name == 'fcfree':
-    depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
-    lrs = [0.004, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0005, 0.0002, 0.0001, 0.0001]
 elif model_name == 'resnet18':
     depths = [0]
     lrs = [0.1]
@@ -1096,40 +925,6 @@ MC = args.MC #specify how many models to average over
 _, dataloaders, criterion = get_task(args)
 dir = args.dir
 task_dis = dataset_name + '_' + str(args.width)
-# torch.save(model1, args.dir +'/' +task_dis+'_vgg19')
-# models, optimizers,result_dirs = [], [], []
-
-# for i in range(len(lrs)):
-#     if model_name == 'fcfree':
-#         args.depth = depths[i]
-#         model_alt, _, _= get_task(args)
-# #     elif model_name == 'vgg19':
-# #         model_alt = VGG('VGG19', base=args.width)
-# #     elif model_name == 'vgg11':
-# #         model_alt = VGG('VGG11', base=args.width)
-# #     elif model_name == 'vgg13':
-# #         model_alt = VGG('VGG13', base=args.width)
-# #     elif model_name == 'vgg16':
-# #         model_alt = VGG('VGG16', base=args.width)
-# #     elif model_name == 'resnet18':
-# #         model_alt = ResNet18()
-#     else:
-#         model_alt, _, _= get_task(args)
-#     model_alt = model_alt.to(device)
-#     models.append(model_alt)
-#     optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
-# #     for name, params in models[i].named_parameters():
-# #         if params.requires_grad:
-# #             print(name)
-#     if model_name == 'fcfree':
-#         result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
-#     else:
-#         result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + args.task)
-#     try:
-#         os.mkdir(result_dir)
-#     except:
-#         print('I will be overwriting a previous experiment')
-#     result_dirs.append(result_dir)
 
 class RunningAverageEstimator:
 
@@ -1191,13 +986,8 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders, args = args, depths = depths, model_name = model_name, dataset_name = dataset_name):
+def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dataloaders, args = args, depths = depths, model_name = model_name, dataset_name = dataset_name):
     log, log1 = pd.Series(), pd.Series()
-#     result_dir = os.path.join(dir, 'depth = ' + str(depths[i]) + ',' + 'lr = ' + str(lr) + ',' + task_dis)
-    # for i in tqdm(range(MC)):
-    # model, _, _ = get_task(args)
-    # params = [param for name, param in model.named_parameters()]
-    # optimizer = optim.SGD(params, lr, momentum=args.mom)
     def output_fn(x, t):
         return model(x)
     rae = RunningAverageEstimator()
@@ -1210,7 +1000,7 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
     loss1, loss2 = 1,1
     acc, epoches = 0, 0
     stop_1, stop_2, stop_acc = False, False, False
-    for epoch in range(args.epochs):
+    for epoch in range(epochs):
         print('\nEpoch: %d' % epoch)
         model.train()
         if epoch > 0:
@@ -1220,16 +1010,9 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             print((loss2, acc))
         if epoch == 1:
             torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
-#             for name, params in model.named_parameters():
-#                 if name == 'layer1.0.bn1.weight':
-#                     print(params.data)
-#             for name, params in model_prev.named_parameters():
-#                 if name == 'layer1.0.bn1.weight':
-#                     print(params.data)
-            
         if epoch == 2:
             torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
-        if epoch == args.epochs -1:
+        if epoch == epochs -1:
             if dataset_name == 'cifar100':
                 log['layer_align_train_loss3'], _, _ = \
                         layer_alignment(model, output_fn, loaders['micro_train'], 100,
@@ -1381,36 +1164,20 @@ def process(index, rank, lr, model, optimizer, result_dir, loaders = dataloaders
             rae.update('train_acc', acc.item())
             
             iterations += 1
-        
-    # return f'Done with {lr} at index {index}'    
+           
             
 
-# models = []
-# if model_name == 'fcfree':
 for j in range(MC):
     models, optimizers,result_dirs = [], [], []
     for i in range(len(lrs)):
         if model_name == 'fcfree':
             args.depth = depths[i]
             model_alt, _, _= get_task(args)
-    #     elif model_name == 'vgg19':
-    #         model_alt = VGG('VGG19', base=args.width)
-    #     elif model_name == 'vgg11':
-    #         model_alt = VGG('VGG11', base=args.width)
-    #     elif model_name == 'vgg13':
-    #         model_alt = VGG('VGG13', base=args.width)
-    #     elif model_name == 'vgg16':
-    #         model_alt = VGG('VGG16', base=args.width)
-    #     elif model_name == 'resnet18':
-    #         model_alt = ResNet18()
         else:
             model_alt, _, _= get_task(args)
         model_alt = model_alt.to(device)
         models.append(model_alt)
-        optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom))
-    #     for name, params in models[i].named_parameters():
-    #         if params.requires_grad:
-    #             print(name)
+        optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, , weight_decay=5e-4))
         if model_name == 'fcfree':
             result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
         else:
@@ -1421,8 +1188,4 @@ for j in range(MC):
             print('I will be overwriting a previous experiment')
         result_dirs.append(result_dir)
     for i in tqdm(range(len(lrs))):
-        process(index = j+args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
-# else:
-#     for j in range(MC):
-#           for i in tqdm(range(len(lrs))):
-#               process(index = j+1, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, depths = None)
+        process(index = j+args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
