@@ -1,3 +1,4 @@
+# %%writefile generic.py
 import argparse
 import time
 import os
@@ -19,7 +20,7 @@ import torch.optim as optim
 parser = argparse.ArgumentParser(description='Compute NTK alignment for models with optimal lr schedule')
 
 parser.add_argument('--task', required=True, type=str, help='Task',
-                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18', 'cifar100_vgg19', 'cifar100_resnet18'])
+                    choices=['mnist_fcfree', 'fmnist_fcfree', 'cifar10_fcfree', 'cifar100_fcfree', 'cifar10_vgg19','cifar10_vgg11','cifar10_vgg13', 'cifar10_vgg16', 'cifar10_resnet18','cifar10_resnet34', 'cifar10_resnet50', 'cifar100_vgg19', 'cifar100_resnet18', 'cifar100_resnet34', 'cifar100_resnet50'])
 parser.add_argument('--depth', default=0, type=int, help='network depth (only works with MNIST MLP)')
 parser.add_argument('--width', default=0, type=int, help='network width (MLP) or base for channels (VGG)')
 parser.add_argument('--last', default=256, type=int, help='last layer width')
@@ -28,6 +29,7 @@ parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
 parser.add_argument('--mom', default=0.9, type=float, help='Momentum')
 parser.add_argument('--diff', default=0., type=float, help='Proportion of difficult examples')
 parser.add_argument('--bs', default=200, type=int, help='batch size for calculating alignment')
+parser.add_argument('--bs_train', default=200, type=int, help='batch size for training set')
 parser.add_argument('--dir', default='./', type=str, help='Directory to save output files')
 parser.add_argument('--index', default=1, type=int, help='index the experiments')
 parser.add_argument('--MC', default=1, type=int, help='average over numebr of models')
@@ -395,7 +397,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, in_planes, planes, stride=1):
+    def __init__(self, in_planes, planes, stride=1, bn = True):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -463,16 +465,16 @@ def ResNet18(num_classes, bn=True):
     return ResNet(BasicBlock, [2,2,2,2], bn=bn, num_classes = num_classes)
 
 def ResNet34(num_classes):
-    return ResNet(BasicBlock, [3,4,6,3], num_classes = num_classes)
+    return ResNet(BasicBlock, [3,4,6,3], num_classes = num_classes, bn = True)
 
 def ResNet50(num_classes):
-    return ResNet(Bottleneck, [3,4,6,3], num_classes = num_classes)
+    return ResNet(Bottleneck, [3,4,6,3], num_classes = num_classes, bn = True)
 
 def ResNet101(num_classes):
-    return ResNet(Bottleneck, [3,4,23,3], num_classes = num_classes)
+    return ResNet(Bottleneck, [3,4,23,3], num_classes = num_classes, bn = True)
 
 def ResNet152(num_classes):
-    return ResNet(Bottleneck, [3,8,36,3], num_classes = num_classes)
+    return ResNet(Bottleneck, [3,8,36,3], num_classes = num_classes, bn = True)
 
 import os
 import torch
@@ -538,7 +540,7 @@ def get_cifar10(args):
 
     trainset = CIFAR10(root=default_datapath, train=True, download=True,
                        transform=transform_train)
-    trainloader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+    trainloader = DataLoader(trainset, batch_size=args.bs_train, shuffle=True, num_workers=4)
 
     testset = CIFAR10(root=default_datapath, train=False, download=True,
                       transform=transform_test)
@@ -561,7 +563,7 @@ def get_cifar100(args):
 
     trainset = CIFAR100(root=default_datapath, train=True, download=True,
                        transform=transform_train)
-    trainloader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+    trainloader = DataLoader(trainset, batch_size= args.bs_train, shuffle=True, num_workers=4)
 
     testset = CIFAR100(root=default_datapath, train=False, download=True,
                       transform=transform_test)
@@ -610,7 +612,7 @@ def get_mnist(args):
 
     trainset = MNIST(root=default_datapath, train=True, download=True,
                      transform=transform_train)
-    trainloader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+    trainloader = DataLoader(trainset, batch_size=args.bs_train, shuffle=True, num_workers=4)
 
     testset = MNIST(root=default_datapath, train=False, download=True,
                     transform=transform_train)
@@ -628,7 +630,7 @@ def get_fmnist(args):
 
     trainset = FashionMNIST(root=default_datapath, train=True, download=True,
                      transform=transform_train)
-    trainloader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+    trainloader = DataLoader(trainset, batch_size=args.bs_train, shuffle=True, num_workers=4)
 
     testset = FashionMNIST(root=default_datapath, train=False, download=True,
                     transform=transform_train)
@@ -728,6 +730,14 @@ def get_task(args):
             model = ResNet18(num_classes = 10, bn = args.bn)
             if args.width != 0:
                 raise NotImplementedError
+        elif model_name == 'resnet34':
+            model = ResNet34(num_classes=10)
+            if args.width != 0:
+                raise NotImplementedError
+        elif model_name == 'resnet50':
+            model = ResNet50(num_classes=10)
+            if args.width != 0:
+                raise NotImplementedError
         elif model_name == 'fcfree':
             model = FC_cifar10(depth = args.depth, width = args.width, last = args.last)
                 
@@ -745,6 +755,14 @@ def get_task(args):
             model = VGG100('VGG16', base=args.width)
         elif model_name == 'resnet18':
             model = ResNet18(num_classes=100, bn = args.bn)
+            if args.width != 0:
+                raise NotImplementedError
+        elif model_name == 'resnet34':
+            model = ResNet34(num_classes=100)
+            if args.width != 0:
+                raise NotImplementedError
+        elif model_name == 'resnet50':
+            model = ResNet50(num_classes=100)
             if args.width != 0:
                 raise NotImplementedError
         elif model_name == 'fcfree':
@@ -805,25 +823,29 @@ if dataset_name == 'mnist':
     lrs = [0.003, 0.003, 0.003, 0.002, 0.001, 0.0007, 0.0003, 0.0002, 0.0001, 0.00007]
     Epochs = [100, 100, 100, 100, 100, 100, 200,200,300,300]
 elif dataset_name == 'fmnist':
-    depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
-    lrs = [0.003, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0002, 0.0001, 0.0002, 0.0001]
-    Epochs = [100, 100, 100, 100, 100, 100, 200,200,300,300]
+    depths = [10] #, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
+    lrs = [0.005] #, 0.004, 0.004, 0.002, 0.001, 0.0007, 0.0002, 0.0001, 0.0002, 0.0001]
+    Epochs = [50] #, 100, 100, 100, 100, 100, 200,200,300,300]
 elif dataset_name == 'cifar10' and model_name == 'vgg19':
     depths = [0]
-    lrs = [0.01]
+    lrs = [0.001, 0.032, 0.01, 0.03]
+    Epochs = [500, 500, 500, 500]
 elif dataset_name == 'cifar10' and model_name == 'vgg11':
     depths = [0]
-    lrs = [0.01]
+    lrs = [0.001, 0.0032, 0.01, 0.02]
+    Epochs = [500, 500, 500, 500]
 elif dataset_name == 'cifar10' and model_name == 'vgg13':
     depths = [0]
-    lrs = [0.01]
+    lrs = [0.001, 0.0032, 0.01, 0.02]
+    Epochs = [500, 500, 500, 500]
 elif dataset_name == 'cifar10' and model_name == 'vgg16':
     depths = [0]
-    lrs = [0.007]
+    lrs = [0.001, 0.0032, 0.01]
+    Epochs = [500, 500, 500, 500]
 elif dataset_name == 'cifar10' and model_name == 'fcfree':
-    depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
-    lrs = [0.005, 0.003, 0.003, 0.001, 0.001, 0.0007, 0.0005, 0.0005, 0.0001, 0.0001]
-    Epochs = [100, 100, 150, 200, 250, 300, 300,500,500,700]
+    depths = [100] #20, 30, 40, 50, 60, 70, 80 ,90 ,
+    lrs = [0.0001] #0.003, 0.003, 0.001, 0.001,0.0007, 0.0005, 0.0005, 0.0001, 
+    Epochs = [700] #100, 100, 150, 200, 250,300, 300, 500,500,
 elif dataset_name == 'cifar100' and model_name == 'vgg19':
     depths = [0]
     lrs = [0.005]
@@ -838,7 +860,16 @@ elif dataset_name == 'cifar10' and model_name == 'vgg16':
     lrs = [0.007]
 elif model_name == 'resnet18':
     depths = [0]
-    lrs = [0.1]
+    lrs = [0.05]
+    Epochs = [500, 500, 500, 500]
+elif model_name == 'resnet34':
+    depths = [0]
+    lrs = [0.02, 0.05] #0.001, 0.003, 0.01
+    Epochs = [500, 500, 500, 500]
+elif model_name == 'resnet50':
+    depths = [0]
+    lrs = [0.02] #0.001, 0.003, 0.01
+    Epochs = [500, 500, 500, 500]
     
     
 MC = args.MC #specify how many models to average over
@@ -916,6 +947,7 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dat
     correct = 0
     total = 0
     iterations = 0
+    trainlosses, testlosses, accs, train_accs  = [], [], [], []
     # to_log = pd.Series()
     loss1, loss2 = 1,1
     acc, epoches = 0, 0
@@ -928,10 +960,16 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dat
             loss2 = rae.get('train_loss')
             acc = rae.get('train_acc')
             print((loss2, acc))
-        if epoch == 1:
-            torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
-        if epoch == 2:
-            torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
+            a,b = test(model, dataloaders['mini_test'])
+            testlosses.append(b)
+            accs.append(a)
+            a,b = test(model, dataloaders['micro_train'])
+            trainlosses.append(b)
+            train_accs.append(a)
+        # if epoch == 1:
+        #     torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
+        # if epoch == 2:
+        #     torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
         if epoch == epochs -1:
             if dataset_name == 'cifar100':
                 log['layer_align_train_loss3'], _, _ = \
@@ -950,31 +988,38 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dat
                     layer_alignment(model, output_fn, loaders['micro_test'], 10,
                                     centering=not Args['no_centering'])
                 
-            log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
+            log['loss3'] = test(model, loaders['mini_test'])[1]
+            log['train_loss3'] = test(model, loaders['micro_train'])[1]
             log['iteration3'] = iterations
             log['accuracy3'] = test(model, loaders['mini_test'])[0]
+            log['train_accuracy3'] = test(model, loaders['micro_train'])[0]
             torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
             torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
             log['movement'] = cal_par_movement(model_prev, model)
+            log['test_loss_curve'] = testlosses
+            log['accuracy_curve'] = accs
+            log['test_loss_curve'] = trainlosses
+            log['accuracy_curve'] = train_accs
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
             break
+
         if epoch == 0:
-            if dataset_name == 'cifar100':
-                log['layer_align_train_init'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
-                                        centering=not args.no_centering)
+            # if dataset_name == 'cifar100':
+            #     log['layer_align_train_init'], _, _ = \
+            #             layer_alignment(model, output_fn, loaders['micro_train'], 100,
+            #                             centering=not args.no_centering)
 
-                log['layer_align_test_init'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
-                                    centering=not Args['no_centering'])
-            else:
-                log['layer_align_train_init'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                        centering=not args.no_centering)
+            #     log['layer_align_test_init'], _, _ = \
+            #         layer_alignment(model, output_fn, loaders['micro_test'], 100,
+            #                         centering=not Args['no_centering'])
+            # else:
+            #     log['layer_align_train_init'], _, _ = \
+            #             layer_alignment(model, output_fn, loaders['micro_train'], 10,
+            #                             centering=not args.no_centering)
 
-                log['layer_align_test_init'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                    centering=not Args['no_centering'])
+            #     log['layer_align_test_init'], _, _ = \
+            #         layer_alignment(model, output_fn, loaders['micro_test'], 10,
+            #                         centering=not Args['no_centering'])
                 
             # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
             if dataset_name == 'cifar100':
@@ -990,6 +1035,10 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dat
                     model_prev = VGG100('VGG16', base=args.width)
                 elif model_name == 'resnet18':
                     model_prev = ResNet18(num_classes = 100, bn = args.bn)
+                elif model_name == 'resnet34':
+                    model_prev = ResNet34(num_classes = 100)
+                elif model_name == 'resnet50':
+                    model_prev = ResNet50(num_classes = 100)
             if dataset_name == 'cifar10' and model_name == 'fcfree':
                 model_prev = FC_cifar10(depth = depths[rank], width = args.width, last = args.last)
             elif model_name == 'fcfree':
@@ -1004,9 +1053,15 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dat
                 model_prev = VGG('VGG16', base=args.width)
             elif model_name == 'resnet18':
                 model_prev = ResNet18(num_classes = 10, bn = args.bn)
+            elif model_name == 'resnet34':
+                model_prev = ResNet34(num_classes = 10)
+            elif model_name == 'resnet50':
+                model_prev = ResNet50(num_classes = 10)
             model_prev.load_state_dict(model.state_dict())
             model_prev = model_prev.to(device)
             # log['iteration1'] = iterations
+            log['accuracy1'], log['loss1'] = test(model, loaders['mini_test'])
+            log['train_accuracy1'], log['train_loss1'] = test(model, loaders['micro_train'])
             # log['accuracy1'] = test(model, loaders['mini_test'])[0]
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
 #             break
@@ -1030,41 +1085,45 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dat
                     layer_alignment(model, output_fn, loaders['micro_test'], 10,
                                     centering=not Args['no_centering'])
                 
-            log['generalization_gap2'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
+            log['accuracy2'], log['loss2'] = test(model, loaders['mini_test'])
+            log['train_accuracy2'], log['train_loss2'] = test(model, loaders['micro_train'])
             log['iteration2'] = iterations
-            log['accuracy2'] = test(model, loaders['mini_test'])[0]
+            # log['accuracy2'] = test(model, loaders['mini_test'])[0]
             log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
             print(log)
             torch.save(model, os.path.join(result_dir, f'model_half_trained_{index}'))
             stop_2 = True
-
-        if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
-            if dataset_name == 'cifar100':
-                log['layer_align_train_loss3'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
-                                        centering=not Args['no_centering'])
-
-                log['layer_align_test_loss3'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
-                                    centering=not Args['no_centering'])
-            else:
-                log['layer_align_train_loss3'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                    centering=not Args['no_centering'])
-            
-                log['layer_align_test_loss3'], _, _ = \
-                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                    centering=not Args['no_centering'])
-                
-            log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
-            log['iteration3'] = iterations
-            log['accuracy3'] = test(model, loaders['mini_test'])[0]
-            torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
-            torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
-            log['movement'] = cal_par_movement(model_prev, model)
-            log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
-
             break
+
+        # if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
+        #     if dataset_name == 'cifar100':
+        #         log['layer_align_train_loss3'], _, _ = \
+        #                 layer_alignment(model, output_fn, loaders['micro_train'], 100,
+        #                                 centering=not Args['no_centering'])
+
+        #         log['layer_align_test_loss3'], _, _ = \
+        #             layer_alignment(model, output_fn, loaders['micro_test'], 100,
+        #                             centering=not Args['no_centering'])
+        #     else:
+        #         log['layer_align_train_loss3'], _, _ = \
+        #             layer_alignment(model, output_fn, loaders['micro_train'], 10,
+        #                             centering=not Args['no_centering'])
+            
+        #         log['layer_align_test_loss3'], _, _ = \
+        #             layer_alignment(model, output_fn, loaders['micro_test'], 10,
+        #                             centering=not Args['no_centering'])
+                
+        #     log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
+        #     log['iteration3'] = iterations
+        #     log['accuracy3'] = test(model, loaders['mini_test'])[0]
+        #     torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
+        #     torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
+        #     log['movement'] = cal_par_movement(model_prev, model)
+        #     log['test_loss_curve'] = testlosses
+        #     log['accuracy_curve'] = accs
+        #     log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+
+        #     break
 
 
         epoches += 1
@@ -1097,11 +1156,11 @@ for j in range(MC):
             model_alt, _, _= get_task(args)
         model_alt = model_alt.to(device)
         models.append(model_alt)
-        optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, , weight_decay=5e-4))
+        optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, weight_decay=5e-4))
         if model_name == 'fcfree':
-            result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' +args.task)
+            result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task)
         else:
-            result_dir = os.path.join(dir, 'lr_' + str(lrs[i])[2:] + '_' + args.task)
+            result_dir = os.path.join(dir, 'bs_' + str(args.bs_train) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task)
         try:
             os.mkdir(result_dir)
         except:
