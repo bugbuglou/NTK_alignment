@@ -878,7 +878,7 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dataloaders, args = args, depths = depths, model_name = model_name, dataset_name = dataset_name):
+def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args, depths, model_name, dataset_name):
     log, log1 = pd.Series(), pd.Series()
     def output_fn(x, t):
         return model(x)
