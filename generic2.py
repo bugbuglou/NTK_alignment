@@ -1,4 +1,4 @@
-# %%writefile generic.py
+%%writefile generic.py
 import argparse
 import time
 import os
@@ -1095,8 +1095,6 @@ class RunningAverageEstimator:
 
 
 def run(args = args):
-    print(args.task)
-    print(args.optim)
     dataset_name, model_name = args.task.split('_')[0], args.task.split('_')[1]
     if dataset_name == 'mnist':
         depths = [10, 20, 30, 40, 50, 60, 70, 80 ,90 ,100]
@@ -1129,7 +1127,8 @@ def run(args = args):
         Epochs = [700] #100, 100, 150, 200, 250,300, 300, 500,500,
     elif dataset_name == 'cifar100' and model_name == 'vgg19':
         depths = [0]
-        lrs = [0.0005, 0.001, 0.032, 0.01]
+        lrs = [0.0005, 0.001, 0.0032, 0.01]
+        Epochs = [500, 500, 500, 500]
     elif dataset_name == 'cifar100' and model_name == 'vgg11':
         depths = [0]
         lrs = [0.01]
@@ -1163,7 +1162,11 @@ def run(args = args):
         
     MC = args.MC #specify how many models to average over
     _, dataloaders, criterion = get_task(args)
-    dir = args.dir
+    if model_name == 'vgg19':
+        dir = 'cifar100/vgg19'
+    elif model_name == 'resnet18':
+        dir = 'cifar100/resnet18'
+    # dir = args.dir
     task_dis = dataset_name + '_' + str(args.width)
 
     models, optimizers,result_dirs = [], [], []
