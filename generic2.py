@@ -901,10 +901,10 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
             loss2 = rae.get('train_loss')
             acc = rae.get('train_acc')
             print((loss2, acc))
-            a,b = test(model, dataloaders['mini_test'], criterion)
+            a,b = test(model, loaders['mini_test'], criterion)
             testlosses.append(b)
             accs.append(a)
-            a,b = test(model, dataloaders['micro_train'], criterion)
+            a,b = test(model, loaders['micro_train'], criterion)
             trainlosses.append(b)
             train_accs.append(a)
         # if epoch == 1:
