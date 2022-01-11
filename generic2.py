@@ -834,264 +834,264 @@ class RunningAverageEstimator:
         def get(self, key):
             return self.estimates[key]
 
-    def cal_par_movement(model_prev, model):
-        # i = 0
-        diffs = []
-        pars1 = [param for name, param in model.named_parameters()] 
-        pars2 = [param for name, param in model_prev.named_parameters()]
-        for i in range(int(len(pars1)/2)):
-            a = pars1[2*i]
-            b = pars1[2*i + 1]
-            # size_a = a.shape[0] * a.shape[1]
-            # if i == int(len(pars1)/2) -1:
-            # size_b = b.shape[0]
-            a1 = pars2[2*i]
-            b1 = pars2[2*i + 1]
-            # else:
-            #     size_b = b.shape[0] * b.shape[1]
-            diff = (torch.norm(a)**2 + torch.norm(b)**2) / (torch.norm(a1)**2 + torch.norm(b1)**2)
-            diffs.append(diff)
-        return diffs
+def cal_par_movement(model_prev, model):
+    # i = 0
+    diffs = []
+    pars1 = [param for name, param in model.named_parameters()] 
+    pars2 = [param for name, param in model_prev.named_parameters()]
+    for i in range(int(len(pars1)/2)):
+        a = pars1[2*i]
+        b = pars1[2*i + 1]
+        # size_a = a.shape[0] * a.shape[1]
+        # if i == int(len(pars1)/2) -1:
+        # size_b = b.shape[0]
+        a1 = pars2[2*i]
+        b1 = pars2[2*i + 1]
+        # else:
+        #     size_b = b.shape[0] * b.shape[1]
+        diff = (torch.norm(a)**2 + torch.norm(b)**2) / (torch.norm(a1)**2 + torch.norm(b1)**2)
+        diffs.append(diff)
+    return diffs
 
-    def stopping_criterion(log):
-        if (log.loc[len(log) - 1]['train_loss'] < 1e-2
-                and log.loc[len(log) - 2]['train_loss'] < 1e-2):
-            return True
-        return False
+def stopping_criterion(log):
+    if (log.loc[len(log) - 1]['train_loss'] < 1e-2
+            and log.loc[len(log) - 2]['train_loss'] < 1e-2):
+        return True
+    return False
 
-    def test(model, loader):
-        model.eval()
-        test_loss = 0
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for batch_idx, (inputs, targets) in enumerate(loader):
-                inputs, targets = inputs.to(device), targets.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
+def test(model, loader):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(loader):
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
 
-                test_loss += loss.item()
-                _, predicted = outputs.max(1)
-                total += targets.size(0)
-                correct += predicted.eq(targets).sum().item()
+            test_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+    model.train()
+    return correct / total, test_loss / (batch_idx + 1)
+
+
+def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dataloaders, args = args, depths = depths, model_name = model_name, dataset_name = dataset_name):
+    log, log1 = pd.Series(), pd.Series()
+    def output_fn(x, t):
+        return model(x)
+    rae = RunningAverageEstimator()
+    model.train()
+    train_loss = 0
+    correct = 0
+    total = 0
+    iterations = 0
+    trainlosses, testlosses, accs, train_accs  = [], [], [], []
+    # to_log = pd.Series()
+    loss1, loss2 = 1,1
+    acc, epoches = 0, 0
+    stop_1, stop_2, stop_acc = False, False, False
+    for epoch in range(epochs):
+        print('\nEpoch: %d' % epoch)
         model.train()
-        return correct / total, test_loss / (batch_idx + 1)
-
-
-    def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders = dataloaders, args = args, depths = depths, model_name = model_name, dataset_name = dataset_name):
-        log, log1 = pd.Series(), pd.Series()
-        def output_fn(x, t):
-            return model(x)
-        rae = RunningAverageEstimator()
-        model.train()
-        train_loss = 0
-        correct = 0
-        total = 0
-        iterations = 0
-        trainlosses, testlosses, accs, train_accs  = [], [], [], []
-        # to_log = pd.Series()
-        loss1, loss2 = 1,1
-        acc, epoches = 0, 0
-        stop_1, stop_2, stop_acc = False, False, False
-        for epoch in range(epochs):
-            print('\nEpoch: %d' % epoch)
-            model.train()
-            if epoch > 0:
-                loss1 = loss2
-                loss2 = rae.get('train_loss')
-                acc = rae.get('train_acc')
-                print((loss2, acc))
-                a,b = test(model, dataloaders['mini_test'])
-                testlosses.append(b)
-                accs.append(a)
-                a,b = test(model, dataloaders['micro_train'])
-                trainlosses.append(b)
-                train_accs.append(a)
-            # if epoch == 1:
-            #     torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
-            # if epoch == 2:
-            #     torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
-            if epoch == epochs -1:
-                if dataset_name == 'cifar100':
-                    log['layer_align_train_loss3'], _, _ = \
-                            layer_alignment(model, output_fn, loaders['micro_train'], 100,
-                                            centering=not Args['no_centering'])
-
-                    log['layer_align_test_loss3'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_test'], 100,
+        if epoch > 0:
+            loss1 = loss2
+            loss2 = rae.get('train_loss')
+            acc = rae.get('train_acc')
+            print((loss2, acc))
+            a,b = test(model, dataloaders['mini_test'])
+            testlosses.append(b)
+            accs.append(a)
+            a,b = test(model, dataloaders['micro_train'])
+            trainlosses.append(b)
+            train_accs.append(a)
+        # if epoch == 1:
+        #     torch.save(model, os.path.join(result_dir, f'model_epoch_1_{index}'))
+        # if epoch == 2:
+        #     torch.save(model, os.path.join(result_dir, f'model_epoch_2_{index}'))
+        if epoch == epochs -1:
+            if dataset_name == 'cifar100':
+                log['layer_align_train_loss3'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
                                         centering=not Args['no_centering'])
-                else:
-                    log['layer_align_train_loss3'], _, _ = \
+
+                log['layer_align_test_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
+                                    centering=not Args['no_centering'])
+            else:
+                log['layer_align_train_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_train'], 10,
+                                    centering=not Args['no_centering'])
+
+                log['layer_align_test_loss3'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                    centering=not Args['no_centering'])
+
+            log['loss3'] = test(model, loaders['mini_test'])[1]
+            log['train_loss3'] = test(model, loaders['micro_train'])[1]
+            log['iteration3'] = iterations
+            log['accuracy3'] = test(model, loaders['mini_test'])[0]
+            log['train_accuracy3'] = test(model, loaders['micro_train'])[0]
+            torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
+            torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
+            log['movement'] = cal_par_movement(model_prev, model)
+            log['test_loss_curve'] = testlosses
+            log['accuracy_curve'] = accs
+            log['test_loss_curve'] = trainlosses
+            log['accuracy_curve'] = train_accs
+            log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+            break
+
+        if epoch == 0:
+            # if dataset_name == 'cifar100':
+            #     log['layer_align_train_init'], _, _ = \
+            #             layer_alignment(model, output_fn, loaders['micro_train'], 100,
+            #                             centering=not args.no_centering)
+
+            #     log['layer_align_test_init'], _, _ = \
+            #         layer_alignment(model, output_fn, loaders['micro_test'], 100,
+            #                         centering=not Args['no_centering'])
+            # else:
+            #     log['layer_align_train_init'], _, _ = \
+            #             layer_alignment(model, output_fn, loaders['micro_train'], 10,
+            #                             centering=not args.no_centering)
+
+            #     log['layer_align_test_init'], _, _ = \
+            #         layer_alignment(model, output_fn, loaders['micro_test'], 10,
+            #                         centering=not Args['no_centering'])
+
+            # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
+            if dataset_name == 'cifar100':
+                if model_name == 'fcfree':
+                    model_prev = FC_cifar100(depth = depths[rank], width = args.width, last = args.last)
+                elif model_name == 'vgg19':
+                    model_prev = VGG100('VGG19', base=args.width)
+                elif model_name == 'vgg11':
+                    model_prev = VGG100('VGG11', base=args.width)
+                elif model_name == 'vgg13':
+                    model_prev = VGG100('VGG13', base=args.width)
+                elif model_name == 'vgg16':
+                    model_prev = VGG100('VGG16', base=args.width)
+                elif model_name == 'resnet18':
+                    model_prev = ResNet18(num_classes = 100, bn = args.bn)
+                elif model_name == 'resnet34':
+                    model_prev = ResNet34(num_classes = 100)
+                elif model_name == 'resnet50':
+                    model_prev = ResNet50(num_classes = 100)
+            if dataset_name == 'cifar10' and model_name == 'fcfree':
+                model_prev = FC_cifar10(depth = depths[rank], width = args.width, last = args.last)
+            elif model_name == 'fcfree':
+                model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
+            elif model_name == 'vgg19':
+                model_prev = VGG('VGG19', base=args.width)
+            elif model_name == 'vgg11':
+                model_prev = VGG('VGG11', base=args.width)
+            elif model_name == 'vgg13':
+                model_prev = VGG('VGG13', base=args.width)
+            elif model_name == 'vgg16':
+                model_prev = VGG('VGG16', base=args.width)
+            elif model_name == 'resnet18':
+                model_prev = ResNet18(num_classes = 10, bn = args.bn)
+            elif model_name == 'resnet34':
+                model_prev = ResNet34(num_classes = 10)
+            elif model_name == 'resnet50':
+                model_prev = ResNet50(num_classes = 10)
+            model_prev.load_state_dict(model.state_dict())
+            model_prev = model_prev.to(device)
+            # log['iteration1'] = iterations
+            log['accuracy1'], log['loss1'] = test(model, loaders['mini_test'])
+            log['train_accuracy1'], log['train_loss1'] = test(model, loaders['micro_train'])
+            # log['accuracy1'] = test(model, loaders['mini_test'])[0]
+            log['test_loss_curve'] = testlosses
+            log['accuracy_curve'] = accs
+            log['test_loss_curve'] = trainlosses
+            log['accuracy_curve'] = train_accs
+            log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+#             break
+
+
+        if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
+            if dataset_name == 'cifar100':
+                log['layer_align_train_loss2'], _, _ = \
+                        layer_alignment(model, output_fn, loaders['micro_train'], 100,
+                                        centering=not Args['no_centering'])
+
+                log['layer_align_test_loss2'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 100,
+                                    centering=not Args['no_centering'])
+            else:
+                log['layer_align_train_loss2'], _, _ = \
                         layer_alignment(model, output_fn, loaders['micro_train'], 10,
                                         centering=not Args['no_centering'])
-                
-                    log['layer_align_test_loss3'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                        centering=not Args['no_centering'])
-                    
-                log['loss3'] = test(model, loaders['mini_test'])[1]
-                log['train_loss3'] = test(model, loaders['micro_train'])[1]
-                log['iteration3'] = iterations
-                log['accuracy3'] = test(model, loaders['mini_test'])[0]
-                log['train_accuracy3'] = test(model, loaders['micro_train'])[0]
-                torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
-                torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
-                log['movement'] = cal_par_movement(model_prev, model)
-                log['test_loss_curve'] = testlosses
-                log['accuracy_curve'] = accs
-                log['test_loss_curve'] = trainlosses
-                log['accuracy_curve'] = train_accs
-                log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
-                break
 
-            if epoch == 0:
-                # if dataset_name == 'cifar100':
-                #     log['layer_align_train_init'], _, _ = \
-                #             layer_alignment(model, output_fn, loaders['micro_train'], 100,
-                #                             centering=not args.no_centering)
+                log['layer_align_test_loss2'], _, _ = \
+                    layer_alignment(model, output_fn, loaders['micro_test'], 10,
+                                    centering=not Args['no_centering'])
 
-                #     log['layer_align_test_init'], _, _ = \
-                #         layer_alignment(model, output_fn, loaders['micro_test'], 100,
-                #                         centering=not Args['no_centering'])
-                # else:
-                #     log['layer_align_train_init'], _, _ = \
-                #             layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                #                             centering=not args.no_centering)
+            log['accuracy2'], log['loss2'] = test(model, loaders['mini_test'])
+            log['train_accuracy2'], log['train_loss2'] = test(model, loaders['micro_train'])
+            log['iteration2'] = iterations
+            # log['accuracy2'] = test(model, loaders['mini_test'])[0]
+            log['test_loss_curve'] = testlosses
+            log['accuracy_curve'] = accs
+            log['test_loss_curve'] = trainlosses
+            log['accuracy_curve'] = train_accs
+            log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
+            print(log)
+            torch.save(model, os.path.join(result_dir, f'model_half_trained_{index}'))
+            stop_2 = True
+            break
 
-                #     log['layer_align_test_init'], _, _ = \
-                #         layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                #                         centering=not Args['no_centering'])
-                    
-                # log['generalization_gap1'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
-                if dataset_name == 'cifar100':
-                    if model_name == 'fcfree':
-                        model_prev = FC_cifar100(depth = depths[rank], width = args.width, last = args.last)
-                    elif model_name == 'vgg19':
-                        model_prev = VGG100('VGG19', base=args.width)
-                    elif model_name == 'vgg11':
-                        model_prev = VGG100('VGG11', base=args.width)
-                    elif model_name == 'vgg13':
-                        model_prev = VGG100('VGG13', base=args.width)
-                    elif model_name == 'vgg16':
-                        model_prev = VGG100('VGG16', base=args.width)
-                    elif model_name == 'resnet18':
-                        model_prev = ResNet18(num_classes = 100, bn = args.bn)
-                    elif model_name == 'resnet34':
-                        model_prev = ResNet34(num_classes = 100)
-                    elif model_name == 'resnet50':
-                        model_prev = ResNet50(num_classes = 100)
-                if dataset_name == 'cifar10' and model_name == 'fcfree':
-                    model_prev = FC_cifar10(depth = depths[rank], width = args.width, last = args.last)
-                elif model_name == 'fcfree':
-                    model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
-                elif model_name == 'vgg19':
-                    model_prev = VGG('VGG19', base=args.width)
-                elif model_name == 'vgg11':
-                    model_prev = VGG('VGG11', base=args.width)
-                elif model_name == 'vgg13':
-                    model_prev = VGG('VGG13', base=args.width)
-                elif model_name == 'vgg16':
-                    model_prev = VGG('VGG16', base=args.width)
-                elif model_name == 'resnet18':
-                    model_prev = ResNet18(num_classes = 10, bn = args.bn)
-                elif model_name == 'resnet34':
-                    model_prev = ResNet34(num_classes = 10)
-                elif model_name == 'resnet50':
-                    model_prev = ResNet50(num_classes = 10)
-                model_prev.load_state_dict(model.state_dict())
-                model_prev = model_prev.to(device)
-                # log['iteration1'] = iterations
-                log['accuracy1'], log['loss1'] = test(model, loaders['mini_test'])
-                log['train_accuracy1'], log['train_loss1'] = test(model, loaders['micro_train'])
-                # log['accuracy1'] = test(model, loaders['mini_test'])[0]
-                log['test_loss_curve'] = testlosses
-                log['accuracy_curve'] = accs
-                log['test_loss_curve'] = trainlosses
-                log['accuracy_curve'] = train_accs
-                log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
-    #             break
-                
-            
-            if loss1 < args.stop_crit_1 and loss2 < args.stop_crit_1 and stop_2 == False:
-                if dataset_name == 'cifar100':
-                    log['layer_align_train_loss2'], _, _ = \
-                            layer_alignment(model, output_fn, loaders['micro_train'], 100,
-                                            centering=not Args['no_centering'])
+        # if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
+        #     if dataset_name == 'cifar100':
+        #         log['layer_align_train_loss3'], _, _ = \
+        #                 layer_alignment(model, output_fn, loaders['micro_train'], 100,
+        #                                 centering=not Args['no_centering'])
 
-                    log['layer_align_test_loss2'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_test'], 100,
-                                        centering=not Args['no_centering'])
-                else:
-                    log['layer_align_train_loss2'], _, _ = \
-                            layer_alignment(model, output_fn, loaders['micro_train'], 10,
-                                            centering=not Args['no_centering'])
+        #         log['layer_align_test_loss3'], _, _ = \
+        #             layer_alignment(model, output_fn, loaders['micro_test'], 100,
+        #                             centering=not Args['no_centering'])
+        #     else:
+        #         log['layer_align_train_loss3'], _, _ = \
+        #             layer_alignment(model, output_fn, loaders['micro_train'], 10,
+        #                             centering=not Args['no_centering'])
 
-                    log['layer_align_test_loss2'], _, _ = \
-                        layer_alignment(model, output_fn, loaders['micro_test'], 10,
-                                        centering=not Args['no_centering'])
-                    
-                log['accuracy2'], log['loss2'] = test(model, loaders['mini_test'])
-                log['train_accuracy2'], log['train_loss2'] = test(model, loaders['micro_train'])
-                log['iteration2'] = iterations
-                # log['accuracy2'] = test(model, loaders['mini_test'])[0]
-                log['test_loss_curve'] = testlosses
-                log['accuracy_curve'] = accs
-                log['test_loss_curve'] = trainlosses
-                log['accuracy_curve'] = train_accs
-                log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
-                print(log)
-                torch.save(model, os.path.join(result_dir, f'model_half_trained_{index}'))
-                stop_2 = True
-                break
+        #         log['layer_align_test_loss3'], _, _ = \
+        #             layer_alignment(model, output_fn, loaders['micro_test'], 10,
+        #                             centering=not Args['no_centering'])
 
-            # if loss1 < args.stop_crit_2 and loss2 < args.stop_crit_2:
-            #     if dataset_name == 'cifar100':
-            #         log['layer_align_train_loss3'], _, _ = \
-            #                 layer_alignment(model, output_fn, loaders['micro_train'], 100,
-            #                                 centering=not Args['no_centering'])
+        #     log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
+        #     log['iteration3'] = iterations
+        #     log['accuracy3'] = test(model, loaders['mini_test'])[0]
+        #     torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
+        #     torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
+        #     log['movement'] = cal_par_movement(model_prev, model)
+        #     log['test_loss_curve'] = testlosses
+        #     log['accuracy_curve'] = accs
+        #     log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
 
-            #         log['layer_align_test_loss3'], _, _ = \
-            #             layer_alignment(model, output_fn, loaders['micro_test'], 100,
-            #                             centering=not Args['no_centering'])
-            #     else:
-            #         log['layer_align_train_loss3'], _, _ = \
-            #             layer_alignment(model, output_fn, loaders['micro_train'], 10,
-            #                             centering=not Args['no_centering'])
-                
-            #         log['layer_align_test_loss3'], _, _ = \
-            #             layer_alignment(model, output_fn, loaders['micro_test'], 10,
-            #                             centering=not Args['no_centering'])
-                    
-            #     log['generalization_gap3'] = test(model, loaders['mini_test'])[1] - test(model, loaders['micro_train'])[1]
-            #     log['iteration3'] = iterations
-            #     log['accuracy3'] = test(model, loaders['mini_test'])[0]
-            #     torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
-            #     torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
-            #     log['movement'] = cal_par_movement(model_prev, model)
-            #     log['test_loss_curve'] = testlosses
-            #     log['accuracy_curve'] = accs
-            #     log.to_pickle(os.path.join(result_dir,f'final_alignment_log_{index}.pkl'))
-
-            #     break
+        #     break
 
 
-            epoches += 1
+        epoches += 1
 
-            for batch_idx, (inputs, targets) in enumerate(loaders['train']):
-                inputs, targets = inputs.to(device), targets.to(device)
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
-                loss.backward()
-                optimizer.step()
+        for batch_idx, (inputs, targets) in enumerate(loaders['train']):
+            inputs, targets = inputs.to(device), targets.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
 
-                _, pred = outputs.max(1)
-                acc = pred.eq(targets.view_as(pred)).float().mean()
+            _, pred = outputs.max(1)
+            acc = pred.eq(targets.view_as(pred)).float().mean()
 
-                rae.update('train_loss', loss.item())
-                rae.update('train_acc', acc.item())
-                
-                iterations += 1
+            rae.update('train_loss', loss.item())
+            rae.update('train_acc', acc.item())
+
+            iterations += 1
 
 
 def run(args = args):
