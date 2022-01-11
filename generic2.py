@@ -1,4 +1,4 @@
-%%writefile generic.py
+# %%writefile generic.py
 import argparse
 import time
 import os
