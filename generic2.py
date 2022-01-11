@@ -980,7 +980,7 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
                     model_prev = ResNet34(num_classes = 100)
                 elif model_name == 'resnet50':
                     model_prev = ResNet50(num_classes = 100)
-            if dataset_name == 'cifar10' and model_name == 'fcfree':
+            elif dataset_name == 'cifar10' and model_name == 'fcfree':
                 model_prev = FC_cifar10(depth = depths[rank], width = args.width, last = args.last)
             elif model_name == 'fcfree':
                 model_prev = FC(depth = depths[rank], width = args.width, last = args.last)
