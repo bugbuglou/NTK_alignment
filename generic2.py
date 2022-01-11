@@ -878,7 +878,7 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args, depths, model_name, dataset_name):
+def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args, model_name, dataset_name, depths):
     log, log1 = pd.Series(), pd.Series()
     def output_fn(x, t):
         return model(x)
@@ -936,7 +936,7 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
             log['train_accuracy3'] = test(model, loaders['micro_train'])[0]
             torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
             torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
-            log['movement'] = cal_par_movement(model_prev, model)
+#             log['movement'] = cal_par_movement(model_prev, model)
             log['test_loss_curve'] = testlosses
             log['accuracy_curve'] = accs
             log['test_loss_curve'] = trainlosses
@@ -1193,7 +1193,7 @@ def run(args = args):
             print('I will be overwriting a previous experiment')
         result_dirs.append(result_dir)
     for i in tqdm(range(len(lrs))):
-        process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name)
+        process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths)
 
 BSs = [32, 128, 512, 2048]
 Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
