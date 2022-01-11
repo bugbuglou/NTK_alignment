@@ -859,7 +859,7 @@ def stopping_criterion(log):
         return True
     return False
 
-def test(model, loader):
+def test(model, loader, criterion):
     model.eval()
     test_loss = 0
     correct = 0
@@ -878,7 +878,7 @@ def test(model, loader):
     return correct / total, test_loss / (batch_idx + 1)
 
 
-def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args, model_name, dataset_name, depths):
+def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args, model_name, dataset_name, depths, criterion):
     log, log1 = pd.Series(), pd.Series()
     def output_fn(x, t):
         return model(x)
@@ -901,10 +901,10 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
             loss2 = rae.get('train_loss')
             acc = rae.get('train_acc')
             print((loss2, acc))
-            a,b = test(model, dataloaders['mini_test'])
+            a,b = test(model, dataloaders['mini_test'], criterion)
             testlosses.append(b)
             accs.append(a)
-            a,b = test(model, dataloaders['micro_train'])
+            a,b = test(model, dataloaders['micro_train'], criterion)
             trainlosses.append(b)
             train_accs.append(a)
         # if epoch == 1:
@@ -929,11 +929,11 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
                     layer_alignment(model, output_fn, loaders['micro_test'], 10,
                                     centering=not Args['no_centering'])
 
-            log['loss3'] = test(model, loaders['mini_test'])[1]
-            log['train_loss3'] = test(model, loaders['micro_train'])[1]
+            log['loss3'] = test(model, loaders['mini_test'], criterion)[1]
+            log['train_loss3'] = test(model, loaders['micro_train'], criterion)[1]
             log['iteration3'] = iterations
-            log['accuracy3'] = test(model, loaders['mini_test'])[0]
-            log['train_accuracy3'] = test(model, loaders['micro_train'])[0]
+            log['accuracy3'] = test(model, loaders['mini_test'], criterion)[0]
+            log['train_accuracy3'] = test(model, loaders['micro_train'], criterion)[0]
             torch.save(model, os.path.join(result_dir, f'model_trained_{index}'))
             torch.save(model_prev, os.path.join(result_dir, f'model_prev_{index}'))
 #             log['movement'] = cal_par_movement(model_prev, model)
@@ -1001,8 +1001,8 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
             model_prev.load_state_dict(model.state_dict())
             model_prev = model_prev.to(device)
             # log['iteration1'] = iterations
-            log['accuracy1'], log['loss1'] = test(model, loaders['mini_test'])
-            log['train_accuracy1'], log['train_loss1'] = test(model, loaders['micro_train'])
+            log['accuracy1'], log['loss1'] = test(model, loaders['mini_test'], criterion)
+            log['train_accuracy1'], log['train_loss1'] = test(model, loaders['micro_train'], criterion)
             # log['accuracy1'] = test(model, loaders['mini_test'])[0]
             log['test_loss_curve'] = testlosses
             log['accuracy_curve'] = accs
@@ -1030,10 +1030,10 @@ def process(index, rank, lr, model, optimizer, result_dir, epochs, loaders, args
                     layer_alignment(model, output_fn, loaders['micro_test'], 10,
                                     centering=not Args['no_centering'])
 
-            log['accuracy2'], log['loss2'] = test(model, loaders['mini_test'])
-            log['train_accuracy2'], log['train_loss2'] = test(model, loaders['micro_train'])
+            log['accuracy2'], log['loss2'] = test(model, loaders['mini_test'], criterion)
+            log['train_accuracy2'], log['train_loss2'] = test(model, loaders['micro_train'], criterion)
             log['iteration2'] = iterations
-            # log['accuracy2'] = test(model, loaders['mini_test'])[0]
+            # log['accuracy2'] = test(model, loaders['mini_test'], criterion)[0]
             log['test_loss_curve'] = testlosses
             log['accuracy_curve'] = accs
             log['test_loss_curve'] = trainlosses
@@ -1193,7 +1193,7 @@ def run(args = args):
             print('I will be overwriting a previous experiment')
         result_dirs.append(result_dir)
     for i in tqdm(range(len(lrs))):
-        process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths)
+        process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths, criterion = criterion)
 
 BSs = [32, 128, 512, 2048]
 Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
