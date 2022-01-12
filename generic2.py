@@ -1162,11 +1162,11 @@ def run(args = args):
         
     MC = args.MC #specify how many models to average over
     _, dataloaders, criterion = get_task(args)
-    if model_name == 'vgg19':
-        dir = 'cifar100/vgg19'
-    elif model_name == 'resnet18':
-        dir = 'cifar100/resnet18'
-    # dir = args.dir
+#     if model_name == 'vgg19':
+#         dir = 'cifar100/vgg19'
+#     elif model_name == 'resnet18':
+#         dir = 'cifar100/resnet18'
+    dir = args.dir
     task_dis = dataset_name + '_' + str(args.width)
 
     models, optimizers,result_dirs = [], [], []
@@ -1196,10 +1196,10 @@ def run(args = args):
         process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths, criterion = criterion)
 
 BSs = [32, 128, 512, 2048]
-Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
+# Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
 Optims = ['Adam', 'SGD']
 for bs in BSs:
-  for t in Tasks:
+#   for t in Tasks:
     for op in Optims:
       args.bs_train, args.optim, args.task = bs, op, t
       run(args)
