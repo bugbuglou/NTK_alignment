@@ -1201,5 +1201,5 @@ Optims = ['Adam', 'SGD']
 for bs in BSs:
 #   for t in Tasks:
     for op in Optims:
-      args.bs_train, args.optim, args.task = bs, op, t
+      args.bs_train, args.optim = bs, op
       run(args)
