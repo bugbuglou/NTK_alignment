@@ -1180,11 +1180,11 @@ def run(args = args):
         models.append(model_alt)
         # optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, weight_decay=5e-4))
         if args.optim == 'Adam':
-            optimizers.append(optim.Adam(models[i].parameters(), lrs[i]))
+            optimizers.append(optim.Adam(models[i].parameters(), lrs[i], weight_decay=5e-3))
         else:
-            optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, weight_decay=5e-4))
+            optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, weight_decay=5e-3))
         if model_name == 'fcfree':
-            result_dir = os.path.join(dir, 'bs_' + str(args.bs_train) + '_' + 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task + '_' + args.optim)
+            result_dir = os.path.join(dir, 'bs_' + str(args.bs_train) + '_' + 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task + '_' + args.optim + '_wd_' + '5e-3')
         else:
             result_dir = os.path.join(dir, 'bs_' + str(args.bs_train) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task + '_' + args.optim)
         try:
@@ -1195,9 +1195,9 @@ def run(args = args):
     for i in tqdm(range(len(lrs))):
         process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths, criterion = criterion)
 
-BSs = [2048] #32, 128, 512, 
+BSs = [32, 128, 512, 2048] #32, 128, 512, 
 # Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
-Optims = ['SGD']
+Optims = ['Adam','SGD']
 for bs in BSs:
 #   for t in Tasks:
     for op in Optims:
