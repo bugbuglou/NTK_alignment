@@ -1184,7 +1184,7 @@ def run(args = args):
         else:
             optimizers.append(optim.SGD(models[i].parameters(), lrs[i], momentum=args.mom, weight_decay=5e-4))
         if model_name == 'fcfree':
-            result_dir = os.path.join(dir, 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task)
+            result_dir = os.path.join(dir, 'bs_' + str(args.bs_train) + '_' + 'depth_' + str(depths[i]) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task + '_' + args.optim)
         else:
             result_dir = os.path.join(dir, 'bs_' + str(args.bs_train) + '_' + 'lr_' + str(lrs[i])[2:] + '_' + args.task + '_' + args.optim)
         try:
