@@ -1123,8 +1123,8 @@ def run(args = args):
         Epochs = [500, 500, 500, 500]
     elif dataset_name == 'cifar10' and model_name == 'fcfree':
         depths = [20, 20, 20, 20, 20] #20, 30, 40, 50, 60, 70, 80 ,90 ,
-        lrs = [0.00005, 0.0001, 0.0003, 0.001, 0.003] #0.003, 0.003, 0.001, 0.001,0.0007, 0.0005, 0.0005, 0.0001, 
-        Epochs = [300, 300, 300, 300, 300] #100, 100, 150, 200, 250,300, 300, 500,500,
+        lrs = [0.00032, 0.001, 0.0032, 0.01, 0.032] #0.003, 0.003, 0.001, 0.001,0.0007, 0.0005, 0.0005, 0.0001, 
+        Epochs = [200, 200, 200, 200, 200] #100, 100, 150, 200, 250,300, 300, 500,500,
     elif dataset_name == 'cifar100' and model_name == 'vgg19':
         depths = [0]
         lrs = [0.0005, 0.001, 0.0032, 0.01]
@@ -1195,7 +1195,7 @@ def run(args = args):
     for i in tqdm(range(len(lrs))):
         process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths, criterion = criterion)
 
-BSs = [128, 512, 2048] #32, 128, 512, 
+BSs = [32, 128, 512, 2048] #32, 128, 512, 
 # Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
 Optims = ['Adam','SGD']
 for bs in BSs:
