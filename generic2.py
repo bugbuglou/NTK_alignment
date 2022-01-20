@@ -1197,7 +1197,7 @@ def run(args = args):
 
 BSs = [32, 128, 512, 2048] #32, 128, 512, 
 # Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
-Optims = ['Adam','SGD']
+Optims = ['SGD']
 for bs in BSs:
 #   for t in Tasks:
     for op in Optims:
