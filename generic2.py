@@ -1195,7 +1195,7 @@ def run(args = args):
     for i in tqdm(range(len(lrs))):
         process(index = args.index, rank = i, lr = lrs[i], model = models[i], optimizer = optimizers[i], epochs = Epochs[i], loaders = dataloaders, args = args, result_dir = result_dirs[i], model_name = model_name, dataset_name = dataset_name, depths = depths, criterion = criterion)
 
-BSs = [32, 128, 512, 2048] #32, 128, 512, 
+BSs = [512, 2048] #32, 128, 512, 
 # Tasks = ['cifar100_resnet18', 'cifar100_vgg19']
 Optims = ['SGD']
 for bs in BSs:
